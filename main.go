@@ -27,12 +27,15 @@ func main() {
 	}
 
 	models.ConnectDatabase("test.db")
-	models.SeedDatabase("raw_data/test_games.csv")
+
+	// models.SeedDatabase("raw_data/test_games.csv")
 
 	gameRepo := repositories.NewGameRepository(models.DB)
 	gameController := controllers.NewGameController(gameRepo)
 
 	r.GET("/games", gameController.GetGames)
+	r.GET("/games/year/max", gameController.GetMaxYear)
+	r.GET("/games/year/min", gameController.GetMinYear)
 
 	r.Run(":" + port)
 }

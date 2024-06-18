@@ -5,6 +5,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"os"
+	"time"
 )
 
 var DB *gorm.DB
@@ -39,9 +40,14 @@ func SeedDatabase(filePath string) {
 	}
 
 	for _, record := range records[1:] {
+		date, error := time.Parse("2006-01-02", "2005-01-02")
+		if error != nil {
+			panic("Could not parse time")
+		}
 		game := Game{
-			Title:   record[0],
-			Reviews: 0,
+			Title:       record[0],
+			Reviews:     0,
+			ReleaseDate: date,
 		}
 		DB.Create(&game)
 	}
