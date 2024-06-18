@@ -10,4 +10,5 @@ type Game struct {
 	Reviews     int       `json:"reviews"`
 	Tags        []*Tag    `json:"tags" gorm:"many2many:game_tags;"`
 	ReleaseDate time.Time `json:"release"`
+	Price       float64   `json:"price"`
 }

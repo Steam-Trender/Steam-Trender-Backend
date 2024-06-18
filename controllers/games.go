@@ -5,19 +5,33 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"steamtrender.com/api/repositories"
+	"steamtrender.com/api/services"
+	"steamtrender.com/api/utils"
 )
 
 type GameController struct {
-	Repo *repositories.GameRepository
+	Service *services.GameService
 }
 
-func NewGameController(repo *repositories.GameRepository) *GameController {
-	return &GameController{Repo: repo}
+func NewGameController(service *services.GameService) *GameController {
+	return &GameController{Service: service}
 }
 
-// GET /games
-func (bc *GameController) GetGames(c *gin.Context) {
+// GET /analysis/competitors
+func (gc *GameController) GetCompetitors(c *gin.Context) {
+	// Get query parameter 'reviewsCoeff'
+	reviewsCoeffParam := c.Query("reviewsCoeff")
+	reviewsCoeff := 30
+
+	if reviewsCoeffParam != "" {
+		var err error
+		reviewsCoeff, err = strconv.Atoi(reviewsCoeffParam)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reviews coeff parameter"})
+			return
+		}
+	}
+
 	// Get query parameter 'reviews'
 	reviewsParam := c.Query("reviews")
 	minReviews := 0
@@ -26,65 +40,49 @@ func (bc *GameController) GetGames(c *gin.Context) {
 		var err error
 		minReviews, err = strconv.Atoi(reviewsParam)
 		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid reviews parameter"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reviews parameter"})
 			return
 		}
 	}
 
 	// Get query parameter 'tags': black & white lists
 	whitelistParam := c.QueryArray("w")
-	whitelist, err := parseUintArray(whitelistParam)
+	whitelist, err := utils.ParseUintArray(whitelistParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid whitelist IDs"})
 		return
 	}
 
 	blacklistParam := c.QueryArray("b")
-	blacklist, err := parseUintArray(blacklistParam)
+	blacklist, err := utils.ParseUintArray(blacklistParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid blacklist IDs"})
 		return
 	}
 
-	games, err := bc.Repo.ReadGames(minReviews, whitelist, blacklist)
+	// run service
+	data, err := gc.Service.GetGamesData(reviewsCoeff, minReviews, whitelist, blacklist)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(200, games)
+	c.JSON(http.StatusOK, data)
 }
 
 // Get /games/years/max
 func (bc *GameController) GetMaxYear(c *gin.Context) {
-	date, err := bc.Repo.ReadReleaseDate(repositories.MaxDate)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	year := date.Year()
-	c.JSON(200, year)
+	// date, err := bc.Repo.ReadReleaseDate(repositories.MaxDate)
+	// if err != nil {
+	//	c.JSON(500, gin.H{"error": err.Error()})
+	//	return
+	//}
+	//year := date.Year()
+	//c.JSON(200, year)
+	c.JSON(200, 300)
 }
 
 // Get /games/years/min
 func (bc *GameController) GetMinYear(c *gin.Context) {
-	date, err := bc.Repo.ReadReleaseDate(repositories.MinDate)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	year := date.Year()
-	c.JSON(200, year)
-}
-
-func parseUintArray(input []string) ([]uint, error) {
-	var result []uint
-	for _, str := range input {
-		num, err := strconv.ParseUint(str, 10, 32)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, uint(num))
-	}
-	return result, nil
+	c.JSON(200, 300)
 }

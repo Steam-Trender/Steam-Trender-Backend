@@ -7,6 +7,7 @@ import (
 	"steamtrender.com/api/controllers"
 	"steamtrender.com/api/models"
 	"steamtrender.com/api/repositories"
+	"steamtrender.com/api/services"
 )
 
 func main() {
@@ -31,9 +32,12 @@ func main() {
 	// models.SeedDatabase("raw_data/test_games.csv")
 
 	gameRepo := repositories.NewGameRepository(models.DB)
-	gameController := controllers.NewGameController(gameRepo)
+	gameService := services.NewGameService(gameRepo)
+	gameController := controllers.NewGameController(gameService)
 
-	r.GET("/games", gameController.GetGames)
+	r.GET("/analysis/competitors", gameController.GetCompetitors)
+	// get for /analysis/tags
+	// get for /analysis/trends
 	r.GET("/games/year/max", gameController.GetMaxYear)
 	r.GET("/games/year/min", gameController.GetMinYear)
 
