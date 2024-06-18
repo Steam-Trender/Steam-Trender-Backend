@@ -1,19 +1,15 @@
 package utils
 
 import (
-	"sort"
+	"github.com/montanaflynn/stats"
 )
 
-func CalculateMedian(numbers []float64) float64 {
-	n := len(numbers)
-	if n == 0 {
-		return 0
-	}
+func CalculatePercentile(data []float64, p float64) float64 {
+	percentile, _ := stats.Percentile(data, p)
+	return percentile
+}
 
-	sort.Float64s(numbers)
-	mid := n / 2
-	if n%2 == 0 {
-		return (numbers[mid-1] + numbers[mid]) / 2
-	}
-	return numbers[mid]
+func CalculateMedian(data []float64) float64 {
+	median, _ := stats.Median(data)
+	return median
 }
