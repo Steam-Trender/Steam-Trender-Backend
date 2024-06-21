@@ -1,22 +1,28 @@
-package repositories
+package repository
 
 import (
 	"gorm.io/gorm"
-	"steamtrender.com/api/models"
+	"steamtrender.com/api/schema"
 	"time"
 )
 
+type IGameRepository interface {
+	IRepository
+	ReadGames(int, []uint, []uint) ([]schema.Game, error)
+	ReadReleaseDate(DateType) (time.Time, error)
+}
+
 type GameRepository struct {
-	DB *gorm.DB
+	*BaseRepository
 }
 
 func NewGameRepository(db *gorm.DB) *GameRepository {
-	return &GameRepository{DB: db}
+	return &GameRepository{BaseRepository: NewBaseRepository(db)}
 }
 
-func (repo *GameRepository) ReadGames(minReviews int, whitelistTagIDs []uint, blacklistTagsIds []uint) ([]models.Game, error) {
-	var games []models.Game
-	query := repo.DB.Model(&models.Game{}).Preload("Tags")
+func (repo *GameRepository) ReadGames(minReviews int, whitelistTagIDs []uint, blacklistTagsIds []uint) ([]schema.Game, error) {
+	var games []schema.Game
+	query := repo.DB.Model(&schema.Game{}).Preload("Tags")
 
 	// filter by reviews
 	query = query.Where("reviews >= ?", minReviews)
@@ -56,9 +62,11 @@ func (repo *GameRepository) ReadReleaseDate(dateType DateType) (time.Time, error
 	}
 
 	var date time.Time
-	err := repo.DB.Model(&models.Game{}).Select(dateQuery).Row().Scan(&date)
+	err := repo.DB.Model(&schema.Game{}).Select(dateQuery).Row().Scan(&date)
 	if err != nil {
 		return time.Time{}, err
 	}
 	return date, nil
 }
+
+var _ IGameRepository = &GameRepository{}

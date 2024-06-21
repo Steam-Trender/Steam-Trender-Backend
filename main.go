@@ -3,12 +3,24 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 	"os"
-	"steamtrender.com/api/controllers"
-	"steamtrender.com/api/models"
-	"steamtrender.com/api/repositories"
-	"steamtrender.com/api/services"
+	"steamtrender.com/api/controller"
+	"steamtrender.com/api/repository"
+	"steamtrender.com/api/service"
 )
+
+func SetupComponents[R repository.IRepository, S service.IService, C controller.IController](
+	db *gorm.DB,
+	newRepository func(*gorm.DB) R,
+	newService func(R) S,
+	newController func(S) C,
+) C {
+	repo := newRepository(db)
+	svc := newService(repo)
+	ctrl := newController(svc)
+	return ctrl
+}
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -27,19 +39,26 @@ func main() {
 		panic("Could not set trusted proxies")
 	}
 
-	models.ConnectDatabase("test.db")
+	repository.ConnectDatabase("test.db")
+
+	tagController := SetupComponents(repository.DB,
+		repository.NewTagRepository,
+		service.NewTagService,
+		controller.NewTagController)
+
+	gameController := SetupComponents(repository.DB,
+		repository.NewGameRepository,
+		service.NewGameService,
+		controller.NewGameController)
 
 	// models.SeedDatabase("raw_data/test_games.csv")
-
-	gameRepo := repositories.NewGameRepository(models.DB)
-	gameService := services.NewGameService(gameRepo)
-	gameController := controllers.NewGameController(gameService)
 
 	r.GET("/analysis/competitors", gameController.GetCompetitors)
 	// get for /analysis/tags
 	// get for /analysis/trends
 	r.GET("/games/year/max", gameController.GetMaxYear)
 	r.GET("/games/year/min", gameController.GetMinYear)
+	r.GET("/tags", tagController.GetAllTags)
 
 	r.Run(":" + port)
 }

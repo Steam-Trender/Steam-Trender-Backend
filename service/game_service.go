@@ -1,21 +1,26 @@
-package services
+package service
 
 import (
-	"steamtrender.com/api/repositories"
+	"steamtrender.com/api/repository"
 	"steamtrender.com/api/schema"
 	"steamtrender.com/api/utils"
 )
 
+type IGameService interface {
+	IService
+	GetGamesData(int, int, []uint, []uint) (schema.CompetitorsData, error)
+}
+
 type GameService struct {
-	repo *repositories.GameRepository
+	Repo repository.IGameRepository
 }
 
-func NewGameService(repo *repositories.GameRepository) *GameService {
-	return &GameService{repo: repo}
+func NewGameService(repo *repository.GameRepository) *GameService {
+	return &GameService{Repo: repo}
 }
 
-func (gs *GameService) GetGamesData(reviwsCoeff int, minReviews int, whitelistTagIDs, blacklistTagIDs []uint) (schema.CompetitorsData, error) {
-	games, err := gs.repo.ReadGames(minReviews, whitelistTagIDs, blacklistTagIDs)
+func (service *GameService) GetGamesData(reviwsCoeff int, minReviews int, whitelistTagIDs, blacklistTagIDs []uint) (schema.CompetitorsData, error) {
+	games, err := service.Repo.ReadGames(minReviews, whitelistTagIDs, blacklistTagIDs)
 	if err != nil {
 		return schema.CompetitorsData{}, err
 	}
@@ -46,3 +51,5 @@ func (gs *GameService) GetGamesData(reviwsCoeff int, minReviews int, whitelistTa
 
 	return data, nil
 }
+
+var _ IGameService = &GameService{}

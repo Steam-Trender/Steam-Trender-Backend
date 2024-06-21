@@ -1,24 +1,33 @@
-package controllers
+package controller
 
 import (
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"steamtrender.com/api/services"
+	"steamtrender.com/api/service"
 	"steamtrender.com/api/utils"
 )
 
-type GameController struct {
-	Service *services.GameService
+type IGameController interface {
+	IController
+	GetCompetitors(c *gin.Context)
+	GetMaxYear(c *gin.Context)
+	GetMinYear(c *gin.Context)
 }
 
-func NewGameController(service *services.GameService) *GameController {
+type GameController struct {
+	Service service.IGameService
+}
+
+func NewGameController(service *service.GameService) *GameController {
 	return &GameController{Service: service}
 }
 
+var _ IController = &GameController{}
+
 // GET /analysis/competitors
-func (gc *GameController) GetCompetitors(c *gin.Context) {
+func (controller *GameController) GetCompetitors(c *gin.Context) {
 	// Get query parameter 'reviewsCoeff'
 	reviewsCoeffParam := c.Query("reviewsCoeff")
 	reviewsCoeff := 30
@@ -61,7 +70,7 @@ func (gc *GameController) GetCompetitors(c *gin.Context) {
 	}
 
 	// run service
-	data, err := gc.Service.GetGamesData(reviewsCoeff, minReviews, whitelist, blacklist)
+	data, err := controller.Service.GetGamesData(reviewsCoeff, minReviews, whitelist, blacklist)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -70,8 +79,8 @@ func (gc *GameController) GetCompetitors(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-// Get /games/years/max
-func (bc *GameController) GetMaxYear(c *gin.Context) {
+// GET /games/years/max
+func (controller *GameController) GetMaxYear(c *gin.Context) {
 	// date, err := bc.Repo.ReadReleaseDate(repositories.MaxDate)
 	// if err != nil {
 	//	c.JSON(500, gin.H{"error": err.Error()})
@@ -82,7 +91,9 @@ func (bc *GameController) GetMaxYear(c *gin.Context) {
 	c.JSON(200, 300)
 }
 
-// Get /games/years/min
+// GET /games/years/min
 func (bc *GameController) GetMinYear(c *gin.Context) {
 	c.JSON(200, 300)
 }
+
+var _ IGameController = &GameController{}

@@ -1,10 +1,11 @@
-package models
+package repository
 
 import (
 	"encoding/csv"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"os"
+	"steamtrender.com/api/schema"
 	"time"
 )
 
@@ -17,7 +18,7 @@ func ConnectDatabase(databasePath string) {
 		panic("Failed to connect to database")
 	}
 
-	err = database.AutoMigrate(&Game{}, &Tag{})
+	err = database.AutoMigrate(&schema.Game{}, &schema.Tag{})
 	if err != nil {
 		return
 	}
@@ -44,7 +45,7 @@ func SeedDatabase(filePath string) {
 		if error != nil {
 			panic("Could not parse time")
 		}
-		game := Game{
+		game := schema.Game{
 			Title:       record[0],
 			Reviews:     0,
 			ReleaseDate: date,

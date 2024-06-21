@@ -1,6 +1,15 @@
 package schema
 
-type TagData struct {
+type Tag struct {
+	ID    uint   `json:"id" gorm:"primary_key"`
+	Title string `json:"title"`
+}
+
+type Tags struct {
+	Tags []Tag `json:"tags"`
+}
+
+type TagAnalysisData struct {
 	Tag           string
 	MedianReviews float64
 	TotalGames    int64
@@ -11,6 +20,6 @@ type TagData struct {
 	RevenueMax    float64
 }
 
-type TagsData struct {
-	Tags []TagData
+type TagsAnalysis struct {
+	Tags []TagAnalysisData
 }
