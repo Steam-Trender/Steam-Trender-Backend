@@ -8,7 +8,8 @@ import (
 
 type IGameService interface {
 	IService
-	GetGamesData(int, int, []uint, []uint) (schema.CompetitorsData, error)
+	AnalyzeCompetitors(float64, int, int, int, []uint, []uint) (schema.CompetitorsData, error)
+	AnalyzeTags(float64, int, int, int, []uint) ([]schema.CompetitorsData, error)
 }
 
 type GameService struct {
@@ -19,12 +20,35 @@ func NewGameService(repo *repository.GameRepository) *GameService {
 	return &GameService{Repo: repo}
 }
 
-func (service *GameService) GetGamesData(reviwsCoeff int, minReviews int, whitelistTagIDs, blacklistTagIDs []uint) (schema.CompetitorsData, error) {
-	games, err := service.Repo.ReadGames(minReviews, whitelistTagIDs, blacklistTagIDs)
+func (service *GameService) AnalyzeCompetitors(reviwsCoeff float64, minReviews int, minYear int, maxYear int, whitelistTagIDs, blacklistTagIDs []uint) (schema.CompetitorsData, error) {
+	games, err := service.Repo.ReadGames(minReviews, minYear, maxYear, whitelistTagIDs, blacklistTagIDs)
 	if err != nil {
 		return schema.CompetitorsData{}, err
 	}
 
+	data := service.AnalyzeGames(games, reviwsCoeff)
+
+	return data, nil
+}
+
+func (service *GameService) AnalyzeTags(reviwsCoeff float64, minYear, maxYear, reviews int, tags []uint) ([]schema.CompetitorsData, error) {
+	var results []schema.CompetitorsData
+	// fix it ^^^
+	for _, tag := range tags {
+		fakeTags := []uint{tag}
+		games, err := service.Repo.ReadGames(reviews, minYear, maxYear, fakeTags, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		data := service.AnalyzeGames(games, reviwsCoeff)
+		results = append(results, data)
+	}
+
+	return results, nil
+}
+
+func (gs *GameService) AnalyzeGames(games []schema.Game, reviewsCoeff float64) schema.CompetitorsData {
 	data := schema.CompetitorsData{
 		Games:      games,
 		TotalGames: int64(len(games)),
@@ -38,7 +62,7 @@ func (service *GameService) GetGamesData(reviwsCoeff int, minReviews int, whitel
 
 		for _, game := range games {
 			reviews = append(reviews, float64(game.Reviews))
-			owners = append(owners, reviews[len(reviews)-1]*float64(reviwsCoeff))
+			owners = append(owners, reviews[len(reviews)-1]*reviewsCoeff)
 			prices = append(prices, float64(game.Price))
 			revenues = append(revenues, prices[len(prices)-1]*owners[len(owners)-1]*utils.RevenueCoeff())
 		}
@@ -49,7 +73,7 @@ func (service *GameService) GetGamesData(reviwsCoeff int, minReviews int, whitel
 		data.MedianRevenue = utils.CalculateMedian(revenues)
 	}
 
-	return data, nil
+	return data
 }
 
 var _ IGameService = &GameService{}

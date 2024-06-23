@@ -19,7 +19,3 @@ type TagAnalysisData struct {
 	RevenueQ3     float64
 	RevenueMax    float64
 }
-
-type TagsAnalysis struct {
-	Tags []TagAnalysisData
-}

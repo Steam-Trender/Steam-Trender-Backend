@@ -8,7 +8,7 @@ import (
 
 type IGameRepository interface {
 	IRepository
-	ReadGames(int, []uint, []uint) ([]schema.Game, error)
+	ReadGames(int, int, int, []uint, []uint) ([]schema.Game, error)
 	ReadReleaseDate(DateType) (time.Time, error)
 }
 
@@ -20,12 +20,17 @@ func NewGameRepository(db *gorm.DB) *GameRepository {
 	return &GameRepository{BaseRepository: NewBaseRepository(db)}
 }
 
-func (repo *GameRepository) ReadGames(minReviews int, whitelistTagIDs []uint, blacklistTagsIds []uint) ([]schema.Game, error) {
+func (repo *GameRepository) ReadGames(minReviews, minYear, maxYear int, whitelistTagIDs []uint, blacklistTagsIds []uint) ([]schema.Game, error) {
 	var games []schema.Game
 	query := repo.DB.Model(&schema.Game{}).Preload("Tags")
 
 	// filter by reviews
 	query = query.Where("reviews >= ?", minReviews)
+
+	// Filter by year range
+	if minYear != 0 && maxYear != 0 {
+		query = query.Where("release_date BETWEEN ? AND ?", minYear, maxYear)
+	}
 
 	// subquery for whitelist: select games that have all tags in the whitelist.
 	if len(whitelistTagIDs) > 0 {

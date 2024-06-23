@@ -12,6 +12,7 @@ import (
 type IGameController interface {
 	IController
 	GetCompetitors(c *gin.Context)
+	GetTagsAnalysis(c *gin.Context)
 	GetMaxYear(c *gin.Context)
 	GetMinYear(c *gin.Context)
 }
@@ -28,17 +29,25 @@ var _ IController = &GameController{}
 
 // GET /analysis/competitors
 func (controller *GameController) GetCompetitors(c *gin.Context) {
-	// Get query parameter 'reviewsCoeff'
-	reviewsCoeffParam := c.Query("reviewsCoeff")
-	reviewsCoeff := 30
+	// Get years query params
+	minYearStr := c.DefaultQuery("minYear", "1")
+	minYear, err := strconv.Atoi(minYearStr)
+	if err != nil {
+		minYear = 1
+	}
 
-	if reviewsCoeffParam != "" {
-		var err error
-		reviewsCoeff, err = strconv.Atoi(reviewsCoeffParam)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reviews coeff parameter"})
-			return
-		}
+	maxYearStr := c.DefaultQuery("maxYear", "9999")
+	maxYear, err := strconv.Atoi(maxYearStr)
+	if err != nil {
+		maxYear = 9999
+	}
+
+	// Get query parameter 'reviewsCoeff'
+	reviewsCoeff, err := strconv.ParseFloat(c.Query("reviewsCoeff"), 30)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reviews coeff parameter"})
+		return
 	}
 
 	// Get query parameter 'reviews'
@@ -70,7 +79,36 @@ func (controller *GameController) GetCompetitors(c *gin.Context) {
 	}
 
 	// run service
-	data, err := controller.Service.GetGamesData(reviewsCoeff, minReviews, whitelist, blacklist)
+	data, err := controller.Service.AnalyzeCompetitors(reviewsCoeff, minYear, maxYear, minReviews, whitelist, blacklist)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
+// GET //analysis/tags
+func (gc *GameController) GetTagsAnalysis(c *gin.Context) {
+	coeff, _ := strconv.ParseFloat(c.Query("coeff"), 64)
+	minYear, _ := strconv.Atoi(c.Query("minYear"))
+	maxYear, _ := strconv.Atoi(c.Query("maxYear"))
+	reviews, _ := strconv.Atoi(c.Query("reviews"))
+
+	tagsParam := c.QueryArray("tags")
+	tagList, err := utils.ParseUintArray(tagsParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tags IDs"})
+		return
+	}
+
+
+	if len(tagList) == 0 || coeff == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required parameters"})
+		return
+	}
+
+	data, err := gc.Service.AnalyzeTags(coeff, minYear, maxYear, reviews, tagList)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
