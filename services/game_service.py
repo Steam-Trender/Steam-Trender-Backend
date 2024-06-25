@@ -34,6 +34,7 @@ class GameService:
 
         result = await session.execute(query)
         games = result.scalars().all()
+
         return games
 
     @staticmethod
