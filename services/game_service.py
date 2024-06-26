@@ -7,6 +7,7 @@ from sqlalchemy.future import select
 from models.game import Game
 from models.tag import Tag
 from schema.games_overview import GamesOverview
+from utils.constants import RevenueCoeff
 
 
 class GameService:
@@ -45,7 +46,7 @@ class GameService:
             reviews = [game.reviews for game in games]
             owners = [r * reviews_coeff for r in reviews]
             prices = [game.price for game in games]
-            revenues = [p * o for p, o in zip(prices, owners)]
+            revenues = [p * o * RevenueCoeff for p, o in zip(prices, owners)]
 
             data.median_reviews = float(np.median(reviews))
             data.median_owners = float(np.median(owners))
