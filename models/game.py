@@ -17,3 +17,22 @@ class Game(Base):
     tags = relationship(
         "Tag", secondary="game_tags", back_populates="games", lazy="selectin"
     )
+
+    _revenue = None
+    _owners = None
+
+    @property
+    def owners(self):
+        return self._owners
+
+    @owners.setter
+    def owners(self, value):
+        self._owners = value
+
+    @property
+    def revenue(self):
+        return self._revenue
+
+    @revenue.setter
+    def revenue(self, value):
+        self._revenue = value

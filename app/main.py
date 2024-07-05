@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db, init_db
 from models.game import Game
-from schema.tag import Tag
 from schema.competitor_overview import CompetitorOverview
+from schema.tag import Tag
 from schema.tag_overview import TagOverview
 from schema.utils import CustomStatus
 from schema.year_overview import YearOverview

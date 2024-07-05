@@ -15,6 +15,8 @@ class Game(BaseModel):
     release_date: date
     price: float
     tags: List[Tag]
+    owners: int
+    revenue: float
 
     class Config:
         from_attributes = True

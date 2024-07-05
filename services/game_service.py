@@ -2,6 +2,7 @@ from datetime import date
 from typing import List
 
 import numpy as np
+from sqlalchemy import desc
 from sqlalchemy.future import select
 
 from models.game import Game
@@ -12,7 +13,7 @@ from utils.constants import RevenueCoeff
 
 class GameService:
     @staticmethod
-    async def read_all_tags(session):
+    async def read_all_tags(session) -> List[Tag]:
         query = select(Tag)
 
         result = await session.execute(query)
@@ -28,7 +29,7 @@ class GameService:
         max_year: int,
         whitelist_tag_ids: list = None,
         blacklist_tag_ids: list = None,
-    ):
+    ) -> List[Game]:
         query = select(Game).where(Game.reviews >= min_reviews)
 
         if min_year != 0 and max_year != 0:
@@ -42,6 +43,7 @@ class GameService:
         if blacklist_tag_ids:
             query = query.where(~Game.tags.any(Tag.id.in_(blacklist_tag_ids)))
 
+        query = query.order_by(desc(Game.reviews)).limit(100)
         result = await session.execute(query)
         games = result.scalars().all()
 
@@ -50,12 +52,20 @@ class GameService:
     @staticmethod
     async def analyze_games(games: List[Game], reviews_coeff: float) -> GamesOverview:
         data = GamesOverview(total_games=len(games))
+        reviews = []
+        owners = []
+        prices = []
+        revenues = []
 
         if games:
-            reviews = [game.reviews for game in games]
-            owners = [r * reviews_coeff for r in reviews]
-            prices = [game.price for game in games]
-            revenues = [p * o * RevenueCoeff for p, o in zip(prices, owners)]
+            for game in games:
+                game.owners = game.reviews * reviews_coeff
+                game.revenue = np.round(game.owners * game.price * RevenueCoeff)
+
+                reviews.append(game.reviews)
+                owners.append(game.owners)
+                prices.append(game.price)
+                revenues.append(game.revenue)
 
             data.median_reviews = float(np.median(reviews))
             data.median_owners = float(np.median(owners))
