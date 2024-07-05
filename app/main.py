@@ -62,8 +62,8 @@ async def get_tags(db: AsyncSession = Depends(get_db)) -> List[Tag]:
 async def get_competitors_analysis(
     reviews_coeff: int = 30,
     min_reviews: int = 30,
-    min_year: int = 2019,
-    max_year: int = 2020,
+    min_year: int = 2020,
+    max_year: int = 2024,
     whitelist_tag_ids: List[int] = Query(None),
     blacklist_tag_ids: List[int] = Query(None),
     db: AsyncSession = Depends(get_db),
@@ -90,8 +90,8 @@ async def get_competitors_analysis(
 @app.get("/analyze/trends")
 async def get_trends_analysis(
     min_reviews: int = 30,
-    min_year: int = 2019,
-    max_year: int = 2020,
+    min_year: int = 2020,
+    max_year: int = 2024,
     tag_id: int = 0,
     db: AsyncSession = Depends(get_db),
 ) -> List[YearOverview]:
@@ -117,8 +117,8 @@ async def get_trends_analysis(
 async def get_tags_analysis(
     reviews_coeff: int = 30,
     min_reviews: int = 30,
-    min_year: int = 2019,
-    max_year: int = 2020,
+    min_year: int = 2020,
+    max_year: int = 2024,
     tag_ids: List[int] = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> List[TagOverview]:

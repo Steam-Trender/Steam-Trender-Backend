@@ -25,17 +25,18 @@ class GameService:
     async def read_games(
         session,
         min_reviews: int,
-        min_year: int,
-        max_year: int,
+        min_year: int = 2020,
+        max_year: int = 2024,
         whitelist_tag_ids: list = None,
         blacklist_tag_ids: list = None,
     ) -> List[Game]:
         query = select(Game).where(Game.reviews >= min_reviews)
 
-        if min_year != 0 and max_year != 0:
-            start_date = date(min_year, 1, 1)
-            end_date = date(max_year, 12, 31)
-            query = query.where(Game.release_date.between(start_date, end_date))
+        if max_year < min_year:
+            min_year, max_year = max_year, min_year
+        start_date = date(min_year, 1, 1)
+        end_date = date(max_year, 12, 31)
+        query = query.where(Game.release_date.between(start_date, end_date))
 
         if whitelist_tag_ids:
             query = query.where(Game.tags.any(Tag.id.in_(whitelist_tag_ids)))
