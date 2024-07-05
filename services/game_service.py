@@ -12,6 +12,15 @@ from utils.constants import RevenueCoeff
 
 class GameService:
     @staticmethod
+    async def read_all_tags(session):
+        query = select(Tag)
+
+        result = await session.execute(query)
+        tags = result.scalars().all()
+
+        return tags
+
+    @staticmethod
     async def read_games(
         session,
         min_reviews: int,

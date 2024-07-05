@@ -2,12 +2,13 @@ from typing import List
 
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db, init_db
 from models.game import Game
-from models.tag import Tag
+from schema.tag import Tag
 from schema.competitor_overview import CompetitorOverview
 from schema.tag_overview import TagOverview
 from schema.utils import CustomStatus
@@ -16,6 +17,19 @@ from services.game_service import GameService
 
 app = FastAPI()
 game_service = GameService()
+
+origins = [
+    "http://localhost:3000",
+    "https://yourfrontenddomain.com",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
@@ -27,6 +41,16 @@ async def startup_event():
 async def get_health() -> CustomStatus:
     """Check API status."""
     return CustomStatus(status_name="pong", status_code="OK")
+
+
+@app.get("/tags")
+async def get_tags(db: AsyncSession = Depends(get_db)) -> List[Tag]:
+    """Get all tags."""
+    try:
+        tags = await game_service.read_all_tags(db)
+        return tags
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/analyze/competitors")
