@@ -11,7 +11,7 @@ from models.game import Game
 from schema.competitor_overview import CompetitorOverview
 from schema.tag import Tag
 from schema.tag_overview import TagOverview
-from schema.utils import CustomStatus
+from schema.utils import CustomStatus, Years
 from schema.year_overview import YearOverview
 from services.game_service import GameService
 
@@ -41,6 +41,11 @@ async def startup_event():
 async def get_health() -> CustomStatus:
     """Check API status."""
     return CustomStatus(status_name="pong", status_code="OK")
+
+
+@app.get("/years")
+async def get_years() -> Years:
+    return Years(max_year=2024, min_year=2010)
 
 
 @app.get("/tags")
