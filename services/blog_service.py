@@ -8,7 +8,9 @@ from schema.post import Post
 
 class BlogService:
     @staticmethod
-    def get_all_posts(url: str, prefix: str = "") -> List[Post]:
+    def get_all_posts(url: str, category: str = "") -> List[Post]:
+        if category:
+            url = f"{url}/+{category}"
         response = requests.get(url)
         posts: List[Post] = []
         if response.status_code != 200:
@@ -20,9 +22,7 @@ class BlogService:
 
         for i, pr in enumerate(posts_raw):
             title = pr.find("h2", class_="blogArticleCut__title").get_text(strip=True)
-            if prefix not in title:
-                continue
-            link = pr["href"]
+            url = pr["href"]
             description = (
                 pr.find("div", class_="blogArticleCut__text")
                 .find("p")
@@ -31,7 +31,7 @@ class BlogService:
             image = pr.find("div", class_="blogArticleCut__text").find("img")["src"]
 
             post = Post(
-                id=i, link=link, title=title, description=description, image=image
+                id=i, url=url, title=title, description=description, image=image
             )
 
             posts.append(post)

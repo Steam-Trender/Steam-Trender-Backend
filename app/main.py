@@ -45,10 +45,9 @@ async def get_health() -> CustomStatus:
 
 
 @app.get("/posts")
-async def get_posts() -> List[Post]:
+async def get_posts(blog_url: str, category: str) -> List[Post]:
     """Get all posts from teletype"""
-    blog_link = "https://teletype.in/@sadari"
-    posts = blog_service.get_all_posts(url=blog_link)
+    posts = blog_service.get_all_posts(url=blog_url, category=category)
     return posts
 
 

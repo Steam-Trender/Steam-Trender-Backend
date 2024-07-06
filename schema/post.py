@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class Post(BaseModel):
     id: int
-    link: str
+    url: str
     title: str
     image: str
     description: str
