@@ -9,14 +9,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db, init_db
 from models.game import Game
 from schema.competitor_overview import CompetitorOverview
+from schema.post import Post
 from schema.tag import Tag
 from schema.tag_overview import TagOverview
 from schema.utils import CustomStatus, Years
 from schema.year_overview import YearOverview
-from services.game_service import GameService
+from services.blog_service import blog_service
+from services.game_service import game_service
 
 app = FastAPI()
-game_service = GameService()
 
 origins = [
     "http://localhost:3000",
@@ -41,6 +42,14 @@ async def startup_event():
 async def get_health() -> CustomStatus:
     """Check API status."""
     return CustomStatus(status_name="pong", status_code="OK")
+
+
+@app.get("/posts")
+async def get_posts() -> List[Post]:
+    """Get all posts from teletype"""
+    blog_link = "https://teletype.in/@sadari"
+    posts = blog_service.get_all_posts(url=blog_link)
+    return posts
 
 
 @app.get("/years")

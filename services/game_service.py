@@ -74,3 +74,6 @@ class GameService:
             data.median_revenue = float(np.median(revenues))
 
         return data
+
+
+game_service = GameService()
