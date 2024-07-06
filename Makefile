@@ -1,9 +1,13 @@
-PROJECT = "Steam Trender API"
+PROJECT = "SteamTrender API"
 
+# make run port=80
 run:
-	go run main.go
+	uvicorn app.main:app --host 0.0.0.0 --port $(port) --reload
 
 pretty:
-	gofmt -w .
+	black .
+	isort .
+
 
 .PHONY: run
+
