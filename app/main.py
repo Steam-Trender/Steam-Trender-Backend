@@ -16,6 +16,8 @@ from schema.utils import CustomStatus, Years
 from schema.year_overview import YearOverview
 from services.blog_service import blog_service
 from services.game_service import game_service
+from services.prediction_service import prediction_service
+from utils.year_coeff import get_year_coeff
 
 app = FastAPI()
 
@@ -53,7 +55,7 @@ async def get_posts(blog_url: str, category: str) -> List[Post]:
 
 @app.get("/years")
 async def get_years() -> Years:
-    return Years(max_year=2024, min_year=2010)
+    return Years(max_year=2024, min_year=2017)
 
 
 @app.get("/tags")
@@ -87,9 +89,9 @@ async def get_competitors_analysis(
             blacklist_tag_ids=blacklist_tag_ids,
         )
         overview = await game_service.analyze_games(
-            games=games, reviews_coeff=reviews_coeff
+            games=games, reviews_coeff=reviews_coeff, revenue_agg=[0.5]
         )
-        result = CompetitorOverview(games=games, overview=overview)
+        result = CompetitorOverview(games=games[:100], overview=overview)
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -100,24 +102,27 @@ async def get_trends_analysis(
     min_reviews: int = 30,
     min_year: int = 2020,
     max_year: int = 2024,
-    tag_id: int = 0,
+    tag_ids: List[int] = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> List[YearOverview]:
     """Check tag trends over years."""
     results = []
-    whitelist_tag_ids = [tag_id]
     for year in range(min_year, max_year + 1, 1):
         games = await game_service.read_games(
             session=db,
             min_reviews=min_reviews,
             min_year=year,
             max_year=year,
-            whitelist_tag_ids=whitelist_tag_ids,
+            whitelist_tag_ids=tag_ids,
             blacklist_tag_ids=None,
         )
-        overview = await game_service.analyze_games(games=games, reviews_coeff=30)
+        coeff = get_year_coeff(year)
+        overview = await game_service.analyze_games(
+            games=games, reviews_coeff=coeff, revenue_agg=[0, 0.25, 0.5, 0.75, 1]
+        )
         year_overview = YearOverview(year=year, overview=overview)
         results.append(year_overview)
+    results = prediction_service.get_trended_years(results)
     return results
 
 
@@ -132,8 +137,8 @@ async def get_tags_analysis(
 ) -> List[TagOverview]:
     """Check tags metrics side-by-side."""
     results = []
-    for tag in tag_ids:
-        whitelist_tag_ids = [tag]
+    for tag_id in tag_ids:
+        whitelist_tag_ids = [tag_id]
         games = await game_service.read_games(
             session=db,
             min_reviews=min_reviews,
@@ -143,8 +148,11 @@ async def get_tags_analysis(
             blacklist_tag_ids=None,
         )
         overview = await game_service.analyze_games(
-            games=games, reviews_coeff=reviews_coeff
+            games=games,
+            reviews_coeff=reviews_coeff,
+            revenue_agg=[0, 0.25, 0.5, 0.75, 1],
         )
+        tag = await game_service.read_tag_by_id(session=db, tag_id=tag_id)
         tag_overview = TagOverview(tag=tag, overview=overview)
         results.append(tag_overview)
     return results
