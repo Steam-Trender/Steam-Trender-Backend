@@ -71,7 +71,8 @@ async def get_tags(db: AsyncSession = Depends(get_db)) -> List[Tag]:
 @app.get("/analyze/competitors")
 async def get_competitors_analysis(
     reviews_coeff: int = 30,
-    min_reviews: int = 30,
+    min_reviews: int = 0,
+    max_reviews: int = None,
     min_year: int = 2020,
     max_year: int = 2024,
     whitelist_tag_ids: List[int] = Query(None),
@@ -83,6 +84,7 @@ async def get_competitors_analysis(
         games = await game_service.read_games(
             session=db,
             min_reviews=min_reviews,
+            max_reviews=max_reviews,
             min_year=min_year,
             max_year=max_year,
             whitelist_tag_ids=whitelist_tag_ids,
@@ -91,7 +93,7 @@ async def get_competitors_analysis(
         overview = await game_service.analyze_games(
             games=games, reviews_coeff=reviews_coeff, revenue_agg=[0.5]
         )
-        result = CompetitorOverview(games=games[:100], overview=overview)
+        result = CompetitorOverview(games=games, overview=overview)
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -99,7 +101,7 @@ async def get_competitors_analysis(
 
 @app.get("/analyze/trends")
 async def get_trends_analysis(
-    min_reviews: int = 30,
+    min_reviews: int = 0,
     min_year: int = 2020,
     max_year: int = 2024,
     tag_ids: List[int] = Query(None),
