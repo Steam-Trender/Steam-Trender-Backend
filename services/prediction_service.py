@@ -10,12 +10,36 @@ class PredictionFeature:
         self.feature = feature
         self.precision = precision
 
+    def get_values(self, years: List[YearOverview]) -> List[float]:
+        values = [getattr(y.overview, self.feature) for y in years]
+        return values
+
+
+class PredictionRevenueFeature(PredictionFeature):
+    def __init__(self, feature: str, precision: int, agg: float):
+        super().__init__(feature, precision)
+        self.agg = agg
+
+    def get_values(self, years: List[YearOverview]) -> List[float]:
+        values = [
+            next((rev.value for rev in y.overview.revenue if rev.agg == self.agg), 0)
+            for y in years
+        ]
+        return values
+
 
 class PredictionService:
     def __init__(self):
-        self.median_owners_feature = PredictionFeature("median_owners", 0)
-        self.median_reviews_feature = PredictionFeature("median_reviews", 0)
-        self.median_price_feature = PredictionFeature("median_price", 2)
+        median_owners_feature = PredictionFeature("median_owners", 0)
+        median_reviews_feature = PredictionFeature("median_reviews", 0)
+        median_price_feature = PredictionFeature("median_price", 2)
+        median_revenue_feature = PredictionRevenueFeature("median_revenue", 0, 0.5)
+        self.prediction_features = [
+            median_owners_feature,
+            median_reviews_feature,
+            median_price_feature,
+            median_revenue_feature,
+        ]
 
     @staticmethod
     def perform_regression(x: List[int], y: List[float]) -> (float, float):
@@ -33,9 +57,10 @@ class PredictionService:
     def get_trended_years(self, years: List[YearOverview]) -> List[YearOverview]:
         """Trend all features"""
 
-        def handle_feature(x: List[int], feature: PredictionFeature):
-            values = [getattr(y.overview, feature.feature) for y in years]
-            k, b = self.perform_regression(years_nums, values)
+        def get_feature_prediction(
+            x: List[int], y: List[float], feature: PredictionFeature
+        ) -> None:
+            k, b = self.perform_regression(x, y)
             for year in years:
                 prediction = self.predict(year.year, k, b)
                 if feature.precision == 0:
@@ -46,12 +71,9 @@ class PredictionService:
 
         years_nums = [y.year for y in years]
 
-        for feature in [
-            self.median_price_feature,
-            self.median_owners_feature,
-            self.median_reviews_feature,
-        ]:
-            handle_feature(x=years_nums, feature=feature)
+        for prediction_feature in self.prediction_features:
+            values = prediction_feature.get_values(years)
+            get_feature_prediction(x=years_nums, y=values, feature=prediction_feature)
 
         return years
 
