@@ -34,13 +34,22 @@ class GameService:
     @staticmethod
     async def read_games(
         session,
-        min_reviews: int,
+        min_reviews: int = 0,
+        max_reviews: int = None,
         min_year: int = 2020,
         max_year: int = 2024,
         whitelist_tag_ids: list = None,
         blacklist_tag_ids: list = None,
     ) -> List[Game]:
+        if max_reviews:
+            min_reviews, max_reviews = min(min_reviews, max_reviews), max(
+                min_reviews, max_reviews
+            )
+
         query = select(Game).where(Game.reviews >= min_reviews)
+
+        if max_reviews:
+            query = query.where(Game.reviews <= max_reviews)
 
         if max_year < min_year:
             min_year, max_year = max_year, min_year
@@ -48,8 +57,8 @@ class GameService:
         end_date = date(max_year, 12, 31)
         query = query.where(Game.release_date.between(start_date, end_date))
 
-        if whitelist_tag_ids:
-            query = query.where(Game.tags.any(Tag.id.in_(whitelist_tag_ids)))
+        for tag_id in whitelist_tag_ids:
+            query = query.filter(Game.tags.any(Tag.id == tag_id))
 
         if blacklist_tag_ids:
             query = query.where(~Game.tags.any(Tag.id.in_(blacklist_tag_ids)))
