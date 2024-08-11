@@ -11,7 +11,7 @@ class Game(Base):
     appid = Column(Integer, unique=True, nullable=False)
     title = Column(String)
     reviews = Column(Integer)
-    reviews_score = Column(Float)
+    reviews_score = Column(Integer)
     release_date = Column(Date)
     price = Column(Float)
     tags = relationship(
