@@ -7,6 +7,11 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "db"
     POSTGRES_USER: str = "admin"
     POSTGRES_PASSWORD: str = "password"
+    STEAM_API: str = "apikey"
+    MAIL_USER: str = "@gmail.com"
+    MAIL_PASSWORD: str = "password"
+    MAIL_SERVER: str = "server.com"
+    MAIL_RECEIVER: str = "@gmail.com"
 
     @property
     def DATABASE_URL(self):  # Create a property that constructs the database URL
