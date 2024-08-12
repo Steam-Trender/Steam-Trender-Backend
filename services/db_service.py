@@ -3,12 +3,10 @@ import os
 import re
 from datetime import date, datetime
 
-from fastapi import Depends
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
-from app.db import get_db
 from config import DATA_FOLDER
 from models.game import Game
 from models.tag import Tag
@@ -16,15 +14,6 @@ from models.update import Update
 
 
 class DatabaseService:
-    @staticmethod
-    async def get_or_null(
-        model, field: str, value: str, db: AsyncSession = Depends(get_db)
-    ):
-        statement = select(model).where(model[field] == value)
-        result = await db.execute(statement)
-        entity = result.scalar()
-        return entity
-
     @staticmethod
     async def get_last_update(session: AsyncSession) -> Update:
         statement = select(Update).order_by(desc(Update.date)).limit(1)
@@ -47,31 +36,13 @@ class DatabaseService:
 
         return max_date
 
-    async def seed_db(self, db) -> None:
-        last_update = await self.get_last_update(db)
-        if last_update is None:
-            last_json = self.get_last_json()
-            if last_json is None:
-                return
-            await self.update_db(ddate=last_json, db=db)
-            return
-
-        current_date = date.today()
-        if (last_update.date - current_date).days < 30:
-            return
-
-        # scrap new data and update db
-
-        return
-
-    async def update_db(self, ddate: date, db: AsyncSession) -> None:
+    @staticmethod
+    async def update_db(ddate: date, db: AsyncSession) -> None:
         update = Update(date=ddate)
         db.add(update)
         date_str = ddate.strftime("%Y_%m_%d")
         with open(f"{DATA_FOLDER}/{date_str}.json", "r") as fp:
             data = json.load(fp)
-
-        data = data[:1]
 
         for entry in data:
             appid = int(entry["appid"])
@@ -99,7 +70,6 @@ class DatabaseService:
 
             tag_objects = []
             for tag_title in tags:
-                # tag = await self.get_or_null(model=Tag, field="title", value=tag_title)
                 statement = select(Tag).where(Tag.title == tag_title)
                 result = await db.execute(statement)
                 tag = result.scalar()
@@ -134,8 +104,16 @@ class DatabaseService:
             )
 
             db.add(game)
-
+        print("done")
         await db.commit()
+
+    async def seed_db(self, db) -> None:
+        last_update = await self.get_last_update(db)
+        if last_update is not None:
+            return
+        last_json = self.get_last_json()
+        if last_json is not None:
+            await self.update_db(ddate=last_json, db=db)
 
 
 db_service = DatabaseService()
