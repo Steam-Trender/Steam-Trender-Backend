@@ -1,5 +1,13 @@
+import asyncio
+import threading
+from datetime import date, datetime, timedelta
 from typing import List
 
+import pytz
+from apscheduler.executors.pool import ThreadPoolExecutor
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +23,7 @@ from schema.year_overview import YearOverview
 from services.blog_service import blog_service
 from services.db_service import db_service
 from services.game_service import game_service
+from services.mail_service import mail_service
 from services.prediction_service import prediction_service
 from services.scraper_service import scraper_service
 from utils.year_coeff import get_year_coeff
@@ -30,8 +39,22 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET"],
+    allow_headers=["Accept", "X-Requested-With"],
+)
+
+
+def schedule_update_data_job():
+    def process():
+        current_date = date.today().strftime("%Y_%m_%d")
+        scraper_service.scrap(filename=current_date)
+        mail_service.send_data(filename=current_date)
+
+    threading.Thread(target=process).start()
+
+
+scheduler = BackgroundScheduler(
+    timezone=pytz.timezone("Europe/Moscow"),
 )
 
 
@@ -40,6 +63,19 @@ async def startup_event():
     await init_db()
     async with SessionLocal() as db:
         await db_service.seed_db(db=db)
+    scheduler.add_job(
+        schedule_update_data_job,
+        # trigger=IntervalTrigger(minutes=30, start_date=datetime.now()),
+        trigger=DateTrigger(run_date=datetime.now() + timedelta(seconds=10)),
+        id="update_data_job",
+        replace_existing=True,
+    )
+    scheduler.start()
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    scheduler.shutdown()
 
 
 @app.get("/ping")
