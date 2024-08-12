@@ -1,22 +1,22 @@
 from typing import List
 
-import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db, init_db
-from models.game import Game
+from app.db import SessionLocal, get_db, init_db
 from schema.competitor_overview import CompetitorOverview
 from schema.post import Post
 from schema.tag import Tag
 from schema.tag_overview import TagOverview
+from schema.update import Update
 from schema.utils import CustomStatus, Years
 from schema.year_overview import YearOverview
 from services.blog_service import blog_service
+from services.db_service import db_service
 from services.game_service import game_service
 from services.prediction_service import prediction_service
+from services.scraper_service import scraper_service
 from utils.year_coeff import get_year_coeff
 
 app = FastAPI()
@@ -38,6 +38,8 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     await init_db()
+    async with SessionLocal() as db:
+        await db_service.seed_db(db=db)
 
 
 @app.get("/ping")
@@ -46,8 +48,17 @@ async def get_health() -> CustomStatus:
     return CustomStatus(status_name="pong", status_code="OK")
 
 
+@app.get("/update")
+async def get_last_update(db: AsyncSession = Depends(get_db)) -> Update:
+    """Get last update (date)"""
+    last_update = await db_service.get_last_update(db)
+    return last_update
+
+
 @app.get("/posts")
-async def get_posts(blog_url: str, category: str) -> List[Post]:
+async def get_posts(
+    blog_url: str = "https://teletype.in/@sadari", category: str = ""
+) -> List[Post]:
     """Get all posts from teletype"""
     posts = blog_service.get_all_posts(url=blog_url, category=category)
     return posts
@@ -158,45 +169,3 @@ async def get_tags_analysis(
         tag_overview = TagOverview(tag=tag, overview=overview)
         results.append(tag_overview)
     return results
-
-
-@app.get("/seed")
-async def seed(db: AsyncSession = Depends(get_db)):
-    df = pd.read_csv("data/initial_games.csv")
-    df = df.drop_duplicates(subset=["App ID"], keep="first")
-
-    for index, row in df.iterrows():
-        async with db.begin():
-            try:
-                reviews_score = float(row["Reviews Score Fancy"][:-1].replace(",", "."))
-            except:
-                reviews_score = 0
-            release_date = pd.to_datetime(row["Release Date"])
-            try:
-                price = float(row["Launch Price"][1:].replace(",", "."))
-            except:
-                price = 0
-
-            game = Game(
-                appid=row["App ID"],
-                title=row["Title"],
-                reviews=row["Reviews Total"],
-                reviews_score=reviews_score,
-                price=price,
-                release_date=release_date,
-            )
-            db.add(game)
-
-            tag_titles = row["Tags"].split(",")
-            game_tags = []
-            for tag_title in tag_titles:
-                tag_title = tag_title.strip()
-                statement = select(Tag).where(Tag.title == tag_title)
-                result = await db.execute(statement)
-                tag = result.scalar()
-                if not tag:
-                    tag = Tag(title=tag_title)
-                    db.add(tag)
-                game_tags.append(tag)
-            game.tags = game_tags
-        await db.commit()
