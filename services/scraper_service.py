@@ -1,7 +1,7 @@
 from typing import List
 
 import requests
-from requests import JSONDecodeError
+from requests import ConnectionError, JSONDecodeError
 from scrapy.crawler import CrawlerProcess
 
 import config
@@ -28,11 +28,15 @@ class ScraperService:
                 data = response.json()
             except JSONDecodeError:
                 break
+            except ConnectionError:
+                break
             games = data["response"]["apps"]
 
             for game in games:
-                # 282370 is a magic number, believe me
-                if game["appid"] >= 282370 and game["price_change_number"] == 0:
+                if (
+                    game["appid"] >= config.THRESHOLD_APP_ID
+                    and game["price_change_number"] == 0
+                ):
                     continue
                 appids.append(game["appid"])
 
@@ -43,8 +47,8 @@ class ScraperService:
 
         return appids
 
-    def scrap(self, filename: str = "test222") -> None:
-        appids = self.get_app_ids()[:100]
+    def scrap(self, filename: str) -> None:
+        appids = self.get_app_ids()[:10]
         process = CrawlerProcess(
             {
                 "FEEDS": {
