@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     MAIL_RECEIVER: str = "@gmail.com"
 
     @property
-    def DATABASE_URL(self):  # Create a property that constructs the database URL
+    def get_db_url(self):
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     class Config:
