@@ -3,13 +3,14 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 
+import config
 from app.settings import settings
 
 
 class MailService:
     @staticmethod
     def send_data(filename: str) -> None:
-        with open(f"data/{filename}", "rb") as file:
+        with open(f"{config.DATA_FOLDER}/{filename}.json", "rb") as file:
             file_content = file.read()
 
         msg = MIMEMultipart()
@@ -20,7 +21,9 @@ class MailService:
         attachment = MIMEBase("application", "octet-stream")
         attachment.set_payload(file_content)
         encoders.encode_base64(attachment)
-        attachment.add_header("Content-Disposition", f"attachment; filename={filename}")
+        attachment.add_header(
+            "Content-Disposition", f"attachment; filename={filename}.json"
+        )
         msg.attach(attachment)
 
         try:
