@@ -1,9 +1,12 @@
 from pydantic import BaseModel
 
+from schema.update import Update
 
-class CustomStatus(BaseModel):
+
+class ServerStatus(BaseModel):
     status_name: str
     status_code: str
+    update: Update
 
 
 class Years(BaseModel):
