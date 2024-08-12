@@ -16,19 +16,15 @@ class GameService:
     @staticmethod
     async def read_all_tags(session) -> List[Tag]:
         query = select(Tag)
-
         result = await session.execute(query)
         tags = result.scalars().all()
-
         return tags
 
     @staticmethod
     async def read_tag_by_id(session, tag_id) -> Tag:
         query = select(Tag).filter(Tag.id == tag_id)
-
         result = await session.execute(query)
         tag = result.scalars().first()
-
         return tag
 
     @staticmethod
