@@ -1,24 +1,23 @@
 import asyncio
 import threading
-from datetime import date, datetime, timedelta
+from datetime import date
 from typing import List
 
 import pytz
-from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.date import DateTrigger
-from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import config
 from app.db import SessionLocal, get_db, init_db
 from schema.competitor_overview import CompetitorOverview
 from schema.post import Post
 from schema.tag import Tag
 from schema.tag_overview import TagOverview
 from schema.update import Update
-from schema.utils import CustomStatus, Years
+from schema.utils import ServerStatus, Years
 from schema.year_overview import YearOverview
 from services.blog_service import blog_service
 from services.db_service import db_service
@@ -32,7 +31,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
-    "https://yourfrontenddomain.com",
+    "https://steamtrender.com",
 ]
 
 app.add_middleware(
@@ -44,11 +43,18 @@ app.add_middleware(
 )
 
 
-def schedule_update_data_job():
+async def update_db(f):
+    async with SessionLocal() as db:
+        await db_service.update_db(ddate=f, db=db)
+
+
+def schedule_update_data_job(loop):
     def process():
-        current_date = date.today().strftime("%Y_%m_%d")
-        scraper_service.scrap(filename=current_date)
-        mail_service.send_data(filename=current_date)
+        current_date = date.today()
+        filename = current_date.strftime("%Y_%m_%d")
+        scraper_service.scrap(filename=filename)
+        # add mail
+        asyncio.run_coroutine_threadsafe(update_db(current_date), loop)
 
     threading.Thread(target=process).start()
 
@@ -60,13 +66,20 @@ scheduler = BackgroundScheduler(
 
 @app.on_event("startup")
 async def startup_event():
+    loop = asyncio.get_running_loop()
+    current_date = date.today()
     await init_db()
+    extra_update = False
     async with SessionLocal() as db:
         await db_service.seed_db(db=db)
+        last_update = await db_service.get_last_update(session=db)
+        if (last_update.date - current_date).days > config.MAX_UPDATES_DELTA:
+            extra_update = True
+    if extra_update:
+        schedule_update_data_job(loop)
     scheduler.add_job(
-        schedule_update_data_job,
-        # trigger=IntervalTrigger(minutes=30, start_date=datetime.now()),
-        trigger=DateTrigger(run_date=datetime.now() + timedelta(seconds=10)),
+        lambda: schedule_update_data_job(loop),
+        trigger=CronTrigger(day="1", hour="20", minute="0"),
         id="update_data_job",
         replace_existing=True,
     )
@@ -79,16 +92,10 @@ def shutdown_event():
 
 
 @app.get("/ping")
-async def get_health() -> CustomStatus:
-    """Check API status."""
-    return CustomStatus(status_name="pong", status_code="OK")
-
-
-@app.get("/update")
-async def get_last_update(db: AsyncSession = Depends(get_db)) -> Update:
-    """Get last update (date)"""
+async def get_health(db: AsyncSession = Depends(get_db)) -> ServerStatus:
+    """Check API status"""
     last_update = await db_service.get_last_update(db)
-    return last_update
+    return ServerStatus(status_name="pong", status_code="OK", update=last_update)
 
 
 @app.get("/posts")
