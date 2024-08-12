@@ -1,4 +1,4 @@
-VAT = 0.93
+VAT = 1
 Returns = 0.92
 AverageRegionalPrice = 0.8
 Discount = 0.8
