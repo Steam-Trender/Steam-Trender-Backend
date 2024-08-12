@@ -104,8 +104,7 @@ class DatabaseService:
             )
 
             db.add(game)
-        print("done")
-        await db.commit()
+            await db.commit()
 
     async def seed_db(self, db) -> None:
         last_update = await self.get_last_update(db)
