@@ -4,8 +4,7 @@ from schema.update import Update
 
 
 class ServerStatus(BaseModel):
-    status_name: str
-    status_code: str
+    status: str
     update: Update
 
 
