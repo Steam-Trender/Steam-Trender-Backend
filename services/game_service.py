@@ -32,11 +32,13 @@ class GameService:
         session,
         min_reviews: int = 0,
         max_reviews: int = None,
-        min_year: int = 2020,
-        max_year: int = 2024,
+        min_date: date = date(2020, 1, 1),
+        max_date: date = date(2024, 12, 31),
         whitelist_tag_ids: list = None,
         blacklist_tag_ids: list = None,
     ) -> List[Game]:
+        if max_reviews is not None and max_reviews < 0:
+            max_reviews = None
         if max_reviews:
             min_reviews, max_reviews = min(min_reviews, max_reviews), max(
                 min_reviews, max_reviews
@@ -47,14 +49,14 @@ class GameService:
         if max_reviews:
             query = query.where(Game.reviews <= max_reviews)
 
-        if max_year < min_year:
-            min_year, max_year = max_year, min_year
-        start_date = date(min_year, 1, 1)
-        end_date = date(max_year, 12, 31)
-        query = query.where(Game.release_date.between(start_date, end_date))
+        if max_date < min_date:
+            min_date, max_date = max_date, min_date
 
-        for tag_id in whitelist_tag_ids:
-            query = query.filter(Game.tags.any(Tag.id == tag_id))
+        query = query.where(Game.release_date.between(min_date, max_date))
+
+        if whitelist_tag_ids:
+            for tag_id in whitelist_tag_ids:
+                query = query.filter(Game.tags.any(Tag.id == tag_id))
 
         if blacklist_tag_ids:
             query = query.where(~Game.tags.any(Tag.id.in_(blacklist_tag_ids)))
@@ -86,7 +88,7 @@ class GameService:
 
             data.median_reviews = int(np.median(reviews))
             data.median_owners = int(np.median(owners))
-            data.median_price = float(np.median(prices))
+            data.median_price = round(float(np.median(prices)), 2)
 
             for agg in revenue_agg:
                 rev_agg = Revenue(agg=agg, value=float(np.quantile(revenues, agg)))
