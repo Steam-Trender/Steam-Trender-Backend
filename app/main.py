@@ -12,13 +12,16 @@ import config
 from app.db import SessionLocal, init_db
 from app.routes import init_routes
 from services.db_service import db_service
+from services.mail_service import mail_service
 from services.scraper_service import scraper_service
 
 app = FastAPI()
 
 origins = [
     "http://localhost:3000",
+    "http://steamtrender.com",
     "https://steamtrender.com",
+    "http://client:3000"
 ]
 
 app.add_middleware(
@@ -40,7 +43,7 @@ def schedule_update_data_job(loop):
         current_date = date.today()
         filename = current_date.strftime("%Y_%m_%d")
         scraper_service.scrap(filename=filename)
-        # add mail
+        mail_service.send_alert_report()
         asyncio.run_coroutine_threadsafe(update_db(current_date), loop)
 
     threading.Thread(target=process).start()
@@ -71,6 +74,7 @@ async def startup_event():
         replace_existing=True,
     )
     scheduler.start()
+    mail_service.send_alert_up()
 
 
 @app.on_event("shutdown")
