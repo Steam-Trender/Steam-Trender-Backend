@@ -22,8 +22,6 @@ origins = [
     "http://localhost:3030",
     "http://steamtrender.com",
     "https://steamtrender.com",
-    "http://steamtrender_client:3000",
-    "http://steamtrender_client:3030"
 ]
 
 app.add_middleware(
@@ -31,7 +29,7 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET"],
-    allow_headers=["Accept", "X-Requested-With"],
+    allow_headers=["*"],
 )
 
 
