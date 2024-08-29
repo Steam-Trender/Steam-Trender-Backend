@@ -19,9 +19,11 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:3030",
     "http://steamtrender.com",
     "https://steamtrender.com",
-    "http://client:3000"
+    "http://steamtrender_client:3000",
+    "http://steamtrender_client:3030"
 ]
 
 app.add_middleware(
@@ -69,7 +71,7 @@ async def startup_event():
         schedule_update_data_job(loop)
     scheduler.add_job(
         lambda: schedule_update_data_job(loop),
-        trigger=CronTrigger(day="2", hour="20", minute="0"),
+        trigger=CronTrigger(day="10", hour="20", minute="0"),
         id="update_data_job",
         replace_existing=True,
     )
