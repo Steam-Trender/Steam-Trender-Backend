@@ -2,7 +2,7 @@ from datetime import date
 from typing import List
 
 import numpy as np
-from sqlalchemy import desc
+from sqlalchemy import desc, asc
 from sqlalchemy.future import select
 
 from models.game import Game
@@ -15,7 +15,7 @@ from utils.constants import RevenueCoeff
 class GameService:
     @staticmethod
     async def read_all_tags(session) -> List[Tag]:
-        query = select(Tag)
+        query = select(Tag).order_by(asc(Tag.title))
         result = await session.execute(query)
         tags = result.scalars().all()
         return tags
