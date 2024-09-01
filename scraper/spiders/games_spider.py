@@ -1,5 +1,6 @@
 import re
 from typing import List
+from tqdm import tqdm
 
 import scrapy
 
@@ -16,7 +17,7 @@ class GamesSpider(scrapy.Spider):
         self.appids = appids
 
     def start_requests(self):
-        for appid in self.appids:
+        for appid in tqdm(self.appids):
             url = f"{self.start_url}/{str(appid)}?cc=us&l=en"
             yield scrapy.Request(
                 url=url,
