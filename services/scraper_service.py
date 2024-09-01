@@ -48,7 +48,7 @@ class ScraperService:
         return appids
 
     def scrap(self, filename: str) -> None:
-        appids = self.get_app_ids()[:10]
+        appids = self.get_app_ids()
         process = CrawlerProcess(
             {
                 "FEEDS": {
