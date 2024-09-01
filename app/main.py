@@ -43,7 +43,7 @@ def schedule_update_data_job(loop):
         current_date = date.today()
         filename = current_date.strftime("%Y_%m_%d")
         scraper_service.scrap(filename=filename)
-        mail_service.send_alert_report()
+        mail_service.send_alert_report(filename=filename)
         asyncio.run_coroutine_threadsafe(update_db(current_date), loop)
 
     threading.Thread(target=process).start()
@@ -63,7 +63,7 @@ async def startup_event():
     async with SessionLocal() as db:
         await db_service.seed_db(db=db)
         last_update = await db_service.get_last_update(session=db)
-        if (last_update.date - current_date).days > config.MAX_UPDATES_DELTA:
+        if (current_date - last_update.date).days > config.MAX_UPDATES_DELTA:
             extra_update = True
     if extra_update:
         schedule_update_data_job(loop)
