@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import config
-from app.db import SessionLocal, init_db
+from app.db import SessionLocal, init_db, reset_db
 from app.routes import init_routes
 from services.db_service import db_service
 from services.mail_service import mail_service
@@ -57,19 +57,16 @@ scheduler = BackgroundScheduler(
 @app.on_event("startup")
 async def startup_event():
     loop = asyncio.get_running_loop()
-    current_date = date.today()
+    if config.DROP_ON_START:
+        await reset_db()
     await init_db()
-    extra_update = False
     async with SessionLocal() as db:
         await db_service.seed_db(db=db)
-        last_update = await db_service.get_last_update(session=db)
-        if (current_date - last_update.date).days > config.MAX_UPDATES_DELTA:
-            extra_update = True
-    if extra_update:
+    if config.UPDATE_ON_START:
         schedule_update_data_job(loop)
     scheduler.add_job(
         lambda: schedule_update_data_job(loop),
-        trigger=CronTrigger(day="10", hour="20", minute="0"),
+        trigger=CronTrigger(day=config.UPDATE_DAY, hour="20", minute="0"),
         id="update_data_job",
         replace_existing=True,
     )

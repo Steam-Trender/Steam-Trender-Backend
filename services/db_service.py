@@ -5,6 +5,7 @@ from datetime import date, datetime
 
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from tqdm import tqdm
 
 import config
 from config import DATA_FOLDER
@@ -44,7 +45,7 @@ class DatabaseService:
         with open(f"{DATA_FOLDER}/{date_str}.json", "r") as fp:
             data = json.load(fp)
 
-        for entry in data:
+        for entry in tqdm(data):
             appid = int(entry["appid"])
             if appid == -1:
                 continue
@@ -111,6 +112,7 @@ class DatabaseService:
         if last_update is not None:
             return
         last_json = self.get_last_json()
+        print(last_json)
         if last_json is not None:
             await self.update_db(ddate=last_json, db=db)
 
