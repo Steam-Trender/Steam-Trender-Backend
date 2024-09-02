@@ -71,7 +71,7 @@ async def startup_event():
         replace_existing=True,
     )
     scheduler.start()
-    mail_service.send_alert_up()
+    # mail_service.send_alert_up()
 
 
 @app.on_event("shutdown")
