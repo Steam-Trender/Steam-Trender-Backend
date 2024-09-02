@@ -112,7 +112,6 @@ class DatabaseService:
         if last_update is not None:
             return
         last_json = self.get_last_json()
-        print(last_json)
         if last_json is not None:
             await self.update_db(ddate=last_json, db=db)
 
