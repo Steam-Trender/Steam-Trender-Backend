@@ -45,7 +45,7 @@ class DatabaseService:
         with open(f"{DATA_FOLDER}/{date_str}.json", "r") as fp:
             data = json.load(fp)
 
-        for entry in tqdm(data):
+        for entry in data:
             appid = int(entry["appid"])
             if appid == -1:
                 continue
@@ -113,6 +113,7 @@ class DatabaseService:
             return
         last_json = self.get_last_json()
         if last_json is not None:
+            print(f"start seeding: {last_json}")
             await self.update_db(ddate=last_json, db=db)
 
 
