@@ -42,7 +42,7 @@ async def get_competitors_analysis(
             blacklist_tag_ids=blacklist_tag_ids,
         )
         overview = await game_service.analyze_games(
-            games=games, reviews_coeff=reviews_coeff, revenue_agg=[0.5]
+            games=games, reviews_coeff=reviews_coeff, revenue_agg=[0.25, 0.5, 0.75]
         )
         games = games[:COMPETITORS_LIMIT]
         result = CompetitorOverview(games=games, overview=overview)
