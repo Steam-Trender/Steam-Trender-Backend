@@ -20,6 +20,8 @@ router_group = "/analyze"
 @router.get(f"{router_group}/competitors", response_model=CompetitorOverview)
 async def get_competitors_analysis(
     reviews_coeff: int = 30,
+    min_price: float = 0,
+    max_price: float = None,
     min_reviews: int = 0,
     max_reviews: int = None,
     min_date: str = "2020-01-01",
@@ -34,6 +36,8 @@ async def get_competitors_analysis(
         min_date = datetime.datetime.strptime(min_date, "%Y-%m-%d").date()
         games = await game_service.read_games(
             session=db,
+            min_price=min_price,
+            max_price=max_price,
             min_reviews=min_reviews,
             max_reviews=max_reviews,
             min_date=min_date,

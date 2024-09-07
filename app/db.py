@@ -29,10 +29,12 @@ async def get_db() -> AsyncSession:
 
 async def reset_db():
     async with engine.begin() as conn:
+
         def reflect_tables(conn):
             meta = MetaData()
             meta.reflect(bind=conn)
             return meta
+
         meta = await conn.run_sync(reflect_tables)
         for table in reversed(meta.sorted_tables):
             await conn.execute(table.delete())

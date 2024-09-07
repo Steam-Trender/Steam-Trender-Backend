@@ -2,7 +2,7 @@ from datetime import date
 from typing import List
 
 import numpy as np
-from sqlalchemy import desc, asc
+from sqlalchemy import asc, desc
 from sqlalchemy.future import select
 
 from models.game import Game
@@ -13,6 +13,14 @@ from utils.constants import RevenueCoeff
 
 
 class GameService:
+    @staticmethod
+    def check_param_borders(min_value: float, max_value: float):
+        if max_value is not None and max_value < 0:
+            max_value = None
+        if max_value:
+            min_value, max_value = min(min_value, max_value), max(min_value, max_value)
+        return min_value, max_value
+
     @staticmethod
     async def read_all_tags(session) -> List[Tag]:
         query = select(Tag).order_by(asc(Tag.title))
@@ -27,24 +35,26 @@ class GameService:
         tag = result.scalars().first()
         return tag
 
-    @staticmethod
     async def read_games(
+        self,
         session,
         min_reviews: int = 0,
         max_reviews: int = None,
+        min_price: float = 0,
+        max_price: float = None,
         min_date: date = date(2020, 1, 1),
         max_date: date = date(2024, 12, 31),
         whitelist_tag_ids: list = None,
         blacklist_tag_ids: list = None,
     ) -> List[Game]:
-        if max_reviews is not None and max_reviews < 0:
-            max_reviews = None
-        if max_reviews:
-            min_reviews, max_reviews = min(min_reviews, max_reviews), max(
-                min_reviews, max_reviews
-            )
+        min_reviews, max_reviews = self.check_param_borders(min_reviews, max_reviews)
+        min_price, max_price = self.check_param_borders(min_price, max_price)
 
         query = select(Game).where(Game.reviews >= min_reviews)
+        query = query.where(Game.price >= min_price)
+
+        if max_price:
+            query = query.where(Game.price <= max_price)
 
         if max_reviews:
             query = query.where(Game.reviews <= max_reviews)
