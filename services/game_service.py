@@ -82,27 +82,23 @@ class GameService:
         games: List[Game], reviews_coeff: float, revenue_agg: List[float]
     ) -> GamesOverview:
         data = GamesOverview(total_games=len(games))
-        reviews = []
-        owners = []
-        prices = []
-        revenues = []
-        if games:
-            for game in games:
-                game.owners = game.reviews * reviews_coeff
-                game.revenue = np.round(game.owners * game.price * RevenueCoeff)
+        if not games:
+            return data
 
-                reviews.append(game.reviews)
-                owners.append(game.owners)
-                prices.append(game.price)
-                revenues.append(game.revenue)
+        reviews = np.array([game.reviews for game in games])
+        prices = np.array([game.price for game in games])
 
-            data.median_reviews = int(np.median(reviews))
-            data.median_owners = int(np.median(owners))
-            data.median_price = round(float(np.median(prices)), 2)
+        owners = reviews * reviews_coeff
+        revenues = np.round(owners * prices * RevenueCoeff)
 
-            for agg in revenue_agg:
-                rev_agg = Revenue(agg=agg, value=float(np.quantile(revenues, agg)))
-                data.revenue.append(rev_agg)
+        data.median_reviews = int(np.median(reviews))
+        data.median_owners = int(np.median(owners))
+        data.median_price = round(float(np.median(prices)), 2)
+        data.revenue_total = int(np.sum(revenues))
+
+        for agg in revenue_agg:
+            rev_agg = Revenue(agg=agg, value=float(np.quantile(revenues, agg)))
+            data.revenue.append(rev_agg)
 
         return data
 
