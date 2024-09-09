@@ -10,4 +10,5 @@ class GamesOverview(BaseModel):
     median_reviews: int = 0
     median_owners: int = 0
     median_price: float = 0.0
+    revenue_total: int = 0
     revenue: List[Revenue] = []
