@@ -1,8 +1,8 @@
 import re
 from typing import List
-from tqdm import tqdm
 
 import scrapy
+from tqdm import tqdm
 
 from scraper.items import GameItem
 

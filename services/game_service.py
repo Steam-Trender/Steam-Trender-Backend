@@ -79,7 +79,10 @@ class GameService:
 
     @staticmethod
     async def analyze_games(
-        games: List[Game], reviews_coeff: float, revenue_agg: List[float]
+        games: List[Game],
+        reviews_coeff: float,
+        revenue_agg: List[float],
+        update_games: bool = False,
     ) -> GamesOverview:
         data = GamesOverview(total_games=len(games))
         if not games:
@@ -90,6 +93,11 @@ class GameService:
 
         owners = reviews * reviews_coeff
         revenues = np.round(owners * prices * RevenueCoeff)
+
+        if update_games:
+            for i, game in enumerate(games):
+                game.owners = owners[i]
+                game.revenue = revenues[i]
 
         data.median_reviews = int(np.median(reviews))
         data.median_owners = int(np.median(owners))
