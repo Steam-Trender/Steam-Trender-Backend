@@ -7,3 +7,7 @@ class Tag(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ExtendedTag(Tag):
+    games_count: int
