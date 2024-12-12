@@ -84,7 +84,13 @@ async def get_trends_analysis(
             overview = await game_service.analyze_games(
                 games=games, reviews_coeff=coeff, revenue_agg=[0, 0.25, 0.5, 0.75, 1]
             )
-            year_overview = YearOverview(year=year, overview=overview)
+            related_tags = await game_service.get_top_tags(
+                session=db, games=games, skip_tag_ids=tag_ids
+            )
+            overview.related_tags = related_tags
+            year_overview = YearOverview(
+                year=year, overview=overview
+            )
             results.append(year_overview)
         results = prediction_service.get_trended_years(results)
         return results
@@ -121,8 +127,14 @@ async def get_tags_analysis(
                 reviews_coeff=reviews_coeff,
                 revenue_agg=[0, 0.25, 0.5, 0.75, 1],
             )
+            related_tags = await game_service.get_top_tags(
+                session=db, games=games, skip_tag_ids=whitelist_tag_ids
+            )
+            overview.related_tags = related_tags
             tag = await game_service.read_tag_by_id(session=db, tag_id=tag_id)
-            tag_overview = TagOverview(tag=tag, overview=overview)
+            tag_overview = TagOverview(
+                tag=tag, overview=overview
+            )
             results.append(tag_overview)
         return results
     except Exception as e:
