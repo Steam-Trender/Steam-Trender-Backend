@@ -3,6 +3,7 @@ from typing import List
 from pydantic import BaseModel
 
 from schema.revenue import Revenue
+from schema.tag import ExtendedTag
 
 
 class GamesOverview(BaseModel):
@@ -12,3 +13,4 @@ class GamesOverview(BaseModel):
     median_price: float = 0.0
     revenue_total: int = 0
     revenue: List[Revenue] = []
+    related_tags: List[ExtendedTag] = []
