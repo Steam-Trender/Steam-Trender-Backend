@@ -2,25 +2,19 @@ from datetime import date
 from typing import List
 
 import numpy as np
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, func
 from sqlalchemy.future import select
 
 from models.game import Game
-from models.tag import Tag
+from models.tag import Tag, game_tags
 from schema.games_overview import GamesOverview
 from schema.revenue import Revenue
+from schema.tag import ExtendedTag
 from utils.constants import RevenueCoeff
+from utils.validate_range import validate_range
 
 
 class GameService:
-    @staticmethod
-    def check_param_borders(min_value: float, max_value: float):
-        if max_value is not None and max_value < 0:
-            max_value = None
-        if max_value:
-            min_value, max_value = min(min_value, max_value), max(min_value, max_value)
-        return min_value, max_value
-
     @staticmethod
     async def read_all_tags(session) -> List[Tag]:
         query = select(Tag).order_by(asc(Tag.title))
@@ -35,8 +29,8 @@ class GameService:
         tag = result.scalars().first()
         return tag
 
+    @staticmethod
     async def read_games(
-        self,
         session,
         min_reviews: int = 0,
         max_reviews: int = None,
@@ -47,20 +41,17 @@ class GameService:
         whitelist_tag_ids: list = None,
         blacklist_tag_ids: list = None,
     ) -> List[Game]:
-        min_reviews, max_reviews = self.check_param_borders(min_reviews, max_reviews)
-        min_price, max_price = self.check_param_borders(min_price, max_price)
+        min_reviews, max_reviews = validate_range(min_reviews, max_reviews)
+        min_price, max_price = validate_range(min_price, max_price)
+        min_date, max_date = validate_range(min_date, max_date)
 
         query = select(Game).where(Game.reviews >= min_reviews)
-        query = query.where(Game.price >= min_price)
-
-        if max_price:
-            query = query.where(Game.price <= max_price)
-
         if max_reviews:
             query = query.where(Game.reviews <= max_reviews)
 
-        if max_date < min_date:
-            min_date, max_date = max_date, min_date
+        query = query.where(Game.price >= min_price)
+        if max_price:
+            query = query.where(Game.price <= max_price)
 
         query = query.where(Game.release_date.between(min_date, max_date))
 
@@ -109,6 +100,33 @@ class GameService:
             data.revenue.append(rev_agg)
 
         return data
+
+    @staticmethod
+    async def get_top_tags(
+        session, games: List[Game], skip_tag_ids: List[int], limit: int = 3
+    ) -> List[ExtendedTag]:
+        game_ids = [game.id for game in games]
+
+        stmt = (
+            select(Tag.id, Tag.title, func.count(Tag.id).label("games_count"))
+            .join(game_tags, Tag.id == game_tags.c.tag_id)
+            .filter(game_tags.c.game_id.in_(game_ids))
+        )
+
+        if skip_tag_ids:
+            stmt = stmt.filter(~Tag.id.in_(skip_tag_ids))
+
+        stmt = (
+            stmt.group_by(Tag.id, Tag.title)
+            .order_by(desc(func.count(Tag.id)))
+            .limit(limit)
+        )
+
+        result = await session.execute(stmt)
+
+        tags = [ExtendedTag.from_orm(tag) for tag in result.all()]
+
+        return tags
 
 
 game_service = GameService()
