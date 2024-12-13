@@ -96,7 +96,7 @@ class GameService:
         data.revenue_total = int(np.sum(revenues))
 
         for agg in revenue_agg:
-            rev_agg = Revenue(agg=agg, value=float(np.quantile(revenues, agg)))
+            rev_agg = Revenue(agg=agg, value=int(np.quantile(revenues, agg)))
             data.revenue.append(rev_agg)
 
         return data
