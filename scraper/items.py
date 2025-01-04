@@ -9,3 +9,4 @@ class GameItem(Item):
     reviews_fancy = Field()
     price = Field()
     release_date = Field()
+    early_access_date = Field()

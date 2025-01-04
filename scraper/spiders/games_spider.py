@@ -89,8 +89,17 @@ class GamesSpider(scrapy.Spider):
         price = list(map(int, price))
 
         release_date = response.xpath(
-            '//div[@id="game_highlights"]/div[@class="rightcol"]/div/div[@class="glance_ctn_responsive_left"]/div[@class="release_date"]/div[@class="date"]/text()'
+            '//div[@id="genresAndManufacturer"]/b[normalize-space(text())="Release Date:"]/following-sibling::text()[1]'
         ).extract()
+        release_date = release_date[0].strip()
+
+        early_access_date = response.xpath(
+            '//div[@id="genresAndManufacturer"]/b[normalize-space(text())="Early Access Release Date:"]/following-sibling::text()[1]'
+        ).extract()
+        if len(early_access_date) == 0:
+            early_access_date = ""
+        else:
+            early_access_date = early_access_date[0].strip()
 
         if len(release_date) == 0:
             release_date = ["No Release Date"]
@@ -106,7 +115,8 @@ class GamesSpider(scrapy.Spider):
         game_item["tags"] = ", ".join(tags)
         game_item["reviews"] = int(reviews[0])
         game_item["price"] = min(price)
-        game_item["release_date"] = release_date[0]
+        game_item["release_date"] = release_date
+        game_item["early_access_date"] = early_access_date
         game_item["reviews_fancy"] = reviews_fancy
 
         return game_item
