@@ -5,7 +5,6 @@ from datetime import date, datetime
 
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from tqdm import tqdm
 
 import config
 from config import DATA_FOLDER
@@ -45,6 +44,12 @@ class DatabaseService:
         with open(f"{DATA_FOLDER}/{date_str}.json", "r") as fp:
             data = json.load(fp)
 
+        # pre-fetching
+        existing_games = await db.execute(select(Game))
+        game_map = {game.appid: game for game in existing_games.scalars()}
+        existing_tags = await db.execute(select(Tag))
+        tag_map = {tag.title: tag for tag in existing_tags.scalars()}
+
         for entry in data:
             appid = int(entry["appid"])
             if appid == -1:
@@ -58,9 +63,10 @@ class DatabaseService:
             if price == 0:
                 continue
 
+            release_date_field = "early_access_date" if entry["early_access_date"] else "release_date"
             try:
                 release_date = datetime.strptime(
-                    entry["release_date"], "%b %d, %Y"
+                    entry[release_date_field], "%b %d, %Y"
                 ).date()
             except ValueError:
                 continue
@@ -71,21 +77,17 @@ class DatabaseService:
 
             tag_objects = []
             for tag_title in tags:
-                statement = select(Tag).where(Tag.title == tag_title)
-                result = await db.execute(statement)
-                tag = result.scalar()
+                tag = tag_map.get(tag_title)
                 if not tag:
                     tag = Tag(title=tag_title)
                     db.add(tag)
+                    tag_map[tag_title] = tag
                 tag_objects.append(tag)
 
             reviews_score = int(entry["reviews_fancy"].replace("%", ""))
             reviews = entry["reviews"]
 
-            statement = select(Game).where(Game.appid == appid)
-            result = await db.execute(statement)
-            game = result.scalar()
-
+            game = game_map.get(appid)
             if game:
                 game.title = title
                 game.reviews = reviews
