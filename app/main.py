@@ -64,12 +64,13 @@ async def startup_event():
         await db_service.seed_db(db=db)
     if config.UPDATE_ON_START:
         schedule_update_data_job(loop)
-    scheduler.add_job(
-        lambda: schedule_update_data_job(loop),
-        trigger=CronTrigger(day=config.UPDATE_DAY, hour="20", minute="0"),
-        id="update_data_job",
-        replace_existing=True,
-    )
+    if config.UPDATE_DAY > 0:
+        scheduler.add_job(
+            lambda: schedule_update_data_job(loop),
+            trigger=CronTrigger(day=config.UPDATE_DAY, hour="20", minute="0"),
+            id="update_data_job",
+            replace_existing=True,
+        )
     scheduler.start()
     # mail_service.send_alert_up()
 
