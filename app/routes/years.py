@@ -7,4 +7,4 @@ router = APIRouter()
 
 @router.get("/years", response_model=Years)
 async def get_years() -> Years:
-    return Years(max_year=2024, min_year=2019)
+    return Years(max_year=2025, min_year=2019)
