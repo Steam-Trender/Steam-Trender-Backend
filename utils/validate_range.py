@@ -10,7 +10,9 @@ def validate_range(
     min_max_float_value: Optional[NumericOrDate] = 0,
 ) -> Tuple[Optional[NumericOrDate], Optional[NumericOrDate]]:
     if max_value is not None:
-        if (isinstance(max_value, float) or isinstance(max_value, int)) and max_value < min_max_float_value:
+        if (
+            isinstance(max_value, float) or isinstance(max_value, int)
+        ) and max_value < min_max_float_value:
             max_value = None
 
     if min_value is not None and max_value is not None:
