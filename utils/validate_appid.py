@@ -10,7 +10,7 @@ def validate_game(gameid: int) -> bool:
     }
 
     try:
-        response = requests.get(url, cookies=cookies, timeout=5)
+        response = requests.get(url, cookies=cookies, timeout=10)
         return response.status_code == 200
     except requests.RequestException:
         return False
