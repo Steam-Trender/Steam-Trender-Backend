@@ -19,4 +19,5 @@ async def get_summary(gameid: int) -> Summary:
         summary = summary_service.get_summary(gameid=gameid)
         return summary
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=400, detail=str(e))
