@@ -9,7 +9,7 @@ import numpy as np
 import requests
 
 from schema.summary import Country, Summary, WordCounter
-from utils.lemmatizer import lemmatizer
+# from utils.lemmatizer import lemmatizer
 from utils.stopwords import STOP_WORDS
 
 
@@ -49,10 +49,10 @@ class SummaryService:
         words = text.split()
         words_cnt = defaultdict(int)
         for word in words:
-            lemma = lemmatizer.lemmatize(word)
-            if word in STOP_WORDS or lemma in STOP_WORDS:
+            #lemma = lemmatizer.lemmatize(word)
+            if word in STOP_WORDS:
                 continue
-            words_cnt[lemma] += 1
+            words_cnt[word] += 1
 
         words = [
             WordCounter(word=word, count=count) for word, count in words_cnt.items()

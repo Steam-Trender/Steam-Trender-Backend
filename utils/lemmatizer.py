@@ -1,3 +1,3 @@
-from nltk.stem import WordNetLemmatizer
+# from nltk.stem import WordNetLemmatizer
 
-lemmatizer = WordNetLemmatizer()
+# lemmatizer = WordNetLemmatizer()
