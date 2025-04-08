@@ -152,5 +152,5 @@ STOP_WORDS = {
     "one",
     "lot",
     "even",
-    "want"
+    "want",
 }
