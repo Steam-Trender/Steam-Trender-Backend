@@ -11,6 +11,7 @@ from config import DATA_FOLDER
 from models.game import Game
 from models.tag import Tag
 from models.update import Update
+from utils.canonize import canonize
 
 
 class DatabaseService:
@@ -56,6 +57,7 @@ class DatabaseService:
                 continue
 
             title = entry["title"]
+            canonized_title = canonize(title)
             if len(title) == 0:
                 continue
 
@@ -63,7 +65,9 @@ class DatabaseService:
             if price == 0:
                 continue
 
-            release_date_field = "early_access_date" if entry["early_access_date"] else "release_date"
+            release_date_field = (
+                "early_access_date" if entry["early_access_date"] else "release_date"
+            )
             try:
                 release_date = datetime.strptime(
                     entry[release_date_field], "%b %d, %Y"
@@ -90,6 +94,7 @@ class DatabaseService:
             game = game_map.get(appid)
             if game:
                 game.title = title
+                game.canonized_title = canonized_title
                 game.reviews = reviews
                 game.reviews_score = reviews_score
                 game.tags.clear()
@@ -99,6 +104,7 @@ class DatabaseService:
             game = Game(
                 appid=appid,
                 title=title,
+                canonized_title=canonized_title,
                 reviews=reviews,
                 reviews_score=reviews_score,
                 price=price,

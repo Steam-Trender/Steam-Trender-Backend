@@ -10,6 +10,7 @@ class Game(Base):
     id = Column(Integer, primary_key=True, index=True)
     appid = Column(Integer, unique=True, nullable=False)
     title = Column(String)
+    canonized_title = Column(String)
     reviews = Column(Integer)
     reviews_score = Column(Integer)
     release_date = Column(Date)

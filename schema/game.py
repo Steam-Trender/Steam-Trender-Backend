@@ -10,6 +10,7 @@ class Game(BaseModel):
     id: int
     appid: int
     title: str
+    canonized_title: str
     reviews: int
     reviews_score: float
     release_date: date
