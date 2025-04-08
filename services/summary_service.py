@@ -2,6 +2,7 @@ import re
 import urllib.parse
 from collections import defaultdict
 from dataclasses import dataclass
+import random
 from typing import List
 
 import numpy as np
@@ -10,7 +11,6 @@ import requests
 from schema.summary import Country, Summary, WordCounter
 from utils.lemmatizer import lemmatizer
 from utils.stopwords import STOP_WORDS
-from utils.summarizer import summarizer
 
 
 @dataclass
@@ -122,7 +122,7 @@ class SummaryService:
         return reviews
 
     def get_summary(self, gameid: int) -> Summary:
-        def fetch_and_clean(review_type: str) -> str:
+        def fetch_and_clean(review_type: str) -> list[str]:
             reviews = self.parse_reviews(
                 gameid=gameid,
                 review_type=review_type,
@@ -130,15 +130,17 @@ class SummaryService:
                 language="english",
                 max_reviews=100,
             )
-            cleaned = [self.clean_review_text(r.review) for r in reviews]
-            return " ".join(cleaned)
+            cleaned_reviews = [self.clean_review_text(r.review) for r in reviews]
+            return cleaned_reviews
 
-        positive_text = fetch_and_clean("positive")
-        positive_summary = summarizer(positive_text, max_length=230, min_length=30, do_sample=False)
+        positive_reviews = fetch_and_clean("positive")
+        positive_text = " ".join(positive_reviews)
+        positive_summary = random.choice(positive_reviews)
         top_positive_words = self.get_top_words(positive_text, top_n=10)
 
-        negative_text = fetch_and_clean("negative")
-        negative_summary = summarizer(positive_text, max_length=230, min_length=30, do_sample=False)
+        negative_reviews = fetch_and_clean("negative")
+        negative_text = " ".join(negative_reviews)
+        negative_summary = random.choice(negative_reviews)
         top_negative_words = self.get_top_words(negative_text, top_n=10)
 
         recent_reviews = self.parse_reviews(
