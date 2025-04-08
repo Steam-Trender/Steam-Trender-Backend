@@ -10,6 +10,7 @@ import requests
 from schema.summary import Country, Summary, WordCounter
 from utils.lemmatizer import lemmatizer
 from utils.stopwords import STOP_WORDS
+from utils.summarizer import summarizer
 
 
 @dataclass
@@ -43,7 +44,7 @@ class SummaryService:
     @staticmethod
     def get_top_words(text: str, top_n: int = 10) -> List[WordCounter]:
         text = text.lower()
-        text = re.sub(r'[^\w\s]', '', text)
+        text = re.sub(r"[^\w\s]", "", text)
 
         words = text.split()
         words_cnt = defaultdict(int)
@@ -132,13 +133,12 @@ class SummaryService:
             cleaned = [self.clean_review_text(r.review) for r in reviews]
             return " ".join(cleaned)
 
-        positive_text = "This game is awesome. I played for 100 hours and still love it!"
-        #positive_summary = summarizer(positive_text, max_length=9, min_length=1)
-        #print(positive_summary)
-
+        positive_text = fetch_and_clean("positive")
+        positive_summary = summarizer(positive_text, max_length=230, min_length=30, do_sample=False)
         top_positive_words = self.get_top_words(positive_text, top_n=10)
 
         negative_text = fetch_and_clean("negative")
+        negative_summary = summarizer(positive_text, max_length=230, min_length=30, do_sample=False)
         top_negative_words = self.get_top_words(negative_text, top_n=10)
 
         recent_reviews = self.parse_reviews(
@@ -149,15 +149,17 @@ class SummaryService:
             max_reviews=100,
         )
         countries = self.get_countries_dist_from_reviews(reviews=recent_reviews)
-        median_playtime = round(np.median([r.playtime_at_review for r in recent_reviews]))
+        median_playtime = round(
+            np.median([r.playtime_at_review for r in recent_reviews])
+        )
 
         summary = Summary(
-            positive_summary=positive_text,
+            positive_summary=positive_summary,
             positive_words=top_positive_words,
-            negative_summary=negative_text,
+            negative_summary=negative_summary,
             negative_words=top_negative_words,
             countries=countries,
-            median_playtime=median_playtime
+            median_playtime=median_playtime,
         )
 
         return summary

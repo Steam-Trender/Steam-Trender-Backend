@@ -43,7 +43,7 @@ def schedule_update_data_job(loop):
         current_date = date.today()
         filename = current_date.strftime("%Y_%m_%d")
         scraper_service.scrap(filename=filename)
-        mail_service.send_alert_report(filename=filename)
+        # mail_service.send_alert_report(filename=filename)
         asyncio.run_coroutine_threadsafe(update_db(current_date), loop)
 
     threading.Thread(target=process).start()
@@ -60,8 +60,6 @@ async def startup_event():
     if config.DROP_ON_START:
         await reset_db()
     await init_db()
-    async with SessionLocal() as db:
-        await db_service.seed_db(db=db)
     if config.UPDATE_ON_START:
         schedule_update_data_job(loop)
     if config.UPDATE_DAY > 0:
@@ -72,6 +70,8 @@ async def startup_event():
             replace_existing=True,
         )
     scheduler.start()
+    async with SessionLocal() as db:
+        await db_service.seed_db(db=db)
     # mail_service.send_alert_up()
 
 
