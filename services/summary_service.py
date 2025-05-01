@@ -1,23 +1,16 @@
+import random
 import re
 import urllib.parse
 from collections import defaultdict
-from dataclasses import dataclass
-import random
 from typing import List
 
 import numpy as np
 import requests
 
+from schema.review import Review
 from schema.summary import Country, Summary, WordCounter
 # from utils.lemmatizer import lemmatizer
 from utils.stopwords import STOP_WORDS
-
-
-@dataclass
-class Review:
-    language: str
-    review: str
-    playtime_at_review: float  # minutes
 
 
 class SummaryService:
@@ -49,7 +42,7 @@ class SummaryService:
         words = text.split()
         words_cnt = defaultdict(int)
         for word in words:
-            #lemma = lemmatizer.lemmatize(word)
+            # lemma = lemmatizer.lemmatize(word)
             if word in STOP_WORDS:
                 continue
             words_cnt[word] += 1
@@ -100,20 +93,20 @@ class SummaryService:
             )
             response = requests.get(url)
             data = response.json()
+            raw_reviews = data.get("reviews", [])
 
-            for r in data.get("reviews", []):
-                reviews.append(
-                    Review(
-                        language=r.get("language", ""),
-                        review=r.get("review", ""),
-                        playtime_at_review=r.get("author", {}).get(
-                            "playtime_at_review", 0.0
-                        ),
-                    )
-                )
+            for review in raw_reviews:
+                try:
+                    valid_review = Review(**review)
+                    reviews.append(valid_review)
+                except ValueError:
+                    continue
 
-            next_cursor = urllib.parse.quote(data.get("cursor", ""))
-            if not next_cursor or next_cursor == cursor:
+            if "cursor" not in data:
+                break
+
+            next_cursor = urllib.parse.quote(data["cursor"])
+            if next_cursor == cursor:
                 break
 
             cursor = next_cursor
@@ -152,7 +145,7 @@ class SummaryService:
         )
         countries = self.get_countries_dist_from_reviews(reviews=recent_reviews)
         median_playtime = round(
-            np.median([r.playtime_at_review for r in recent_reviews])
+            np.median([r.author.playtime_at_review for r in recent_reviews])
         )
 
         summary = Summary(

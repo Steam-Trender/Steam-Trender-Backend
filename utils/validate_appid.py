@@ -1,7 +1,7 @@
 import requests
 
 
-def validate_game(gameid: int) -> bool:
+def is_existing_game(gameid: int) -> bool:
     url = f"https://store.steampowered.com/app/{gameid}?cc=us&l=en"
     cookies = {
         "wants_mature_content": "1",

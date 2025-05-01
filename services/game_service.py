@@ -23,11 +23,18 @@ class GameService:
         return tags
 
     @staticmethod
-    async def read_tag_by_id(session, tag_id) -> Tag:
+    async def read_tag_by_id(session, tag_id: int) -> Tag:
         query = select(Tag).filter(Tag.id == tag_id)
         result = await session.execute(query)
         tag = result.scalars().first()
         return tag
+
+    @staticmethod
+    async def read_game_by_id(session, gameid: int) -> Game | None:
+        query = select(Game).filter(Game.appid == gameid)
+        result = await session.execute(query)
+        game = result.scalars().first()
+        return game
 
     @staticmethod
     async def read_games(
