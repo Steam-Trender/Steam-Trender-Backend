@@ -21,3 +21,4 @@ class Game(BaseModel):
 
     class Config:
         from_attributes = True
+        fields = {"tags": "tags_sorted"}
