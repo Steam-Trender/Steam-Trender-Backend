@@ -55,7 +55,7 @@ class GamesSpider(scrapy.Spider):
             tags = ["No Tags"]
 
         reviews = response.xpath(
-            '//div[@id="userReviews"]/div[@class="user_reviews_summary_row"]/div/meta[@itemprop="reviewCount"]/@content'
+            '//div[@id="userReviews"]//a[@itemprop="aggregateRating"]//meta[@itemprop="reviewCount"]/@content'
         ).extract()
 
         if len(reviews) == 0:
