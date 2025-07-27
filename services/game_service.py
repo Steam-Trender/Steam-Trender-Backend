@@ -4,9 +4,10 @@ from typing import List
 import numpy as np
 from sqlalchemy import asc, desc, func
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 from models.game import Game
-from models.tag import Tag, game_tags
+from models.tag import Tag, GameTagAssociation
 from schema.games_overview import GamesOverview
 from schema.revenue import Revenue
 from schema.tag import ExtendedTag
@@ -40,6 +41,7 @@ class GameService:
         max_date: date = date(2024, 12, 31),
         whitelist_tag_ids: list = None,
         blacklist_tag_ids: list = None,
+        tag_threshold: int = 5,
     ) -> List[Game]:
         min_reviews, max_reviews = validate_range(min_reviews, max_reviews)
         min_price, max_price = validate_range(min_price, max_price)
@@ -57,14 +59,31 @@ class GameService:
 
         if whitelist_tag_ids:
             for tag_id in whitelist_tag_ids:
-                query = query.filter(Game.tags.any(Tag.id == tag_id))
+                query = query.filter(
+                    Game.tag_associations.any(
+                        (GameTagAssociation.tag_id == tag_id) &
+                        (GameTagAssociation.tag_number <= tag_threshold)
+                    )
+                )
 
         if blacklist_tag_ids:
-            query = query.where(~Game.tags.any(Tag.id.in_(blacklist_tag_ids)))
+            for tag_id in blacklist_tag_ids:
+                query = query.filter(
+                    ~Game.tag_associations.any(
+                        (GameTagAssociation.tag_id == tag_id) &
+                        (GameTagAssociation.tag_number <= tag_threshold)
+                    )
+                )
+
+        query = query.options(
+            selectinload(Game.tag_associations).selectinload(GameTagAssociation.tag)
+        )
 
         query = query.order_by(desc(Game.reviews))
         result = await session.execute(query)
         games = result.scalars().all()
+
+        print(len(games))
 
         return games
 
@@ -108,9 +127,14 @@ class GameService:
         game_ids = [game.id for game in games]
 
         stmt = (
-            select(Tag.id, Tag.title, func.count(Tag.id).label("games_count"))
-            .join(game_tags, Tag.id == game_tags.c.tag_id)
-            .filter(game_tags.c.game_id.in_(game_ids))
+            select(
+                Tag.id,
+                Tag.title,
+                func.count(Tag.id).label("games_count")
+            )
+            .join(GameTagAssociation, Tag.id == GameTagAssociation.tag_id)
+            .filter(GameTagAssociation.game_id.in_(game_ids))
+            .group_by(Tag.id, Tag.title)
         )
 
         if skip_tag_ids:

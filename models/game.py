@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Date, Float, Integer, String
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 
 from app.db import Base
@@ -15,9 +16,10 @@ class Game(Base):
     reviews_score = Column(Integer)
     release_date = Column(Date)
     price = Column(Float)
-    tags = relationship(
-        "Tag", secondary="game_tags", back_populates="games", lazy="selectin"
+    tag_associations = relationship(
+        "GameTagAssociation", back_populates="game"
     )
+    tags = association_proxy("tag_associations", "tag")
 
     _revenue = None
     _owners = None
@@ -37,3 +39,7 @@ class Game(Base):
     @revenue.setter
     def revenue(self, value):
         self._revenue = value
+
+    @property
+    def tags_sorted(self):
+        return [assoc.tag for assoc in sorted(self.tag_associations, key=lambda assoc: assoc.tag_number)]
