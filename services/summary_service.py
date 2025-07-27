@@ -163,6 +163,3 @@ class SummaryService:
         )
 
         return summary
-
-
-summary_service = SummaryService()
