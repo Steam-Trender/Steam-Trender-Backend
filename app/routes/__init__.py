@@ -9,4 +9,3 @@ def init_routes(app: FastAPI):
     app.include_router(analysis.router)
     app.include_router(posts.router)
     app.include_router(tags.router)
-    app.include_router(summary.router)
