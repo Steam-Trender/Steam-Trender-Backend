@@ -7,7 +7,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from models.game import Game
-from models.tag import Tag, GameTagAssociation
+from models.tag import GameTagAssociation, Tag
 from schema.games_overview import GamesOverview
 from schema.revenue import Revenue
 from schema.tag import ExtendedTag
@@ -61,8 +61,8 @@ class GameService:
             for tag_id in whitelist_tag_ids:
                 query = query.filter(
                     Game.tag_associations.any(
-                        (GameTagAssociation.tag_id == tag_id) &
-                        (GameTagAssociation.tag_number <= tags_threshold)
+                        (GameTagAssociation.tag_id == tag_id)
+                        & (GameTagAssociation.tag_number <= tags_threshold)
                     )
                 )
 
@@ -70,8 +70,8 @@ class GameService:
             for tag_id in blacklist_tag_ids:
                 query = query.filter(
                     ~Game.tag_associations.any(
-                        (GameTagAssociation.tag_id == tag_id) &
-                        (GameTagAssociation.tag_number <= tags_threshold)
+                        (GameTagAssociation.tag_id == tag_id)
+                        & (GameTagAssociation.tag_number <= tags_threshold)
                     )
                 )
 
@@ -125,11 +125,7 @@ class GameService:
         game_ids = [game.id for game in games]
 
         stmt = (
-            select(
-                Tag.id,
-                Tag.title,
-                func.count(Tag.id).label("games_count")
-            )
+            select(Tag.id, Tag.title, func.count(Tag.id).label("games_count"))
             .join(GameTagAssociation, Tag.id == GameTagAssociation.tag_id)
             .filter(GameTagAssociation.game_id.in_(game_ids))
             .group_by(Tag.id, Tag.title)

@@ -134,11 +134,15 @@ class SummaryService:
             return " ".join(cleaned)
 
         positive_text = fetch_and_clean("positive")
-        positive_summary = summarizer(positive_text, max_length=230, min_length=30, do_sample=False)
+        positive_summary = summarizer(
+            positive_text, max_length=230, min_length=30, do_sample=False
+        )
         top_positive_words = self.get_top_words(positive_text, top_n=10)
 
         negative_text = fetch_and_clean("negative")
-        negative_summary = summarizer(positive_text, max_length=230, min_length=30, do_sample=False)
+        negative_summary = summarizer(
+            positive_text, max_length=230, min_length=30, do_sample=False
+        )
         top_negative_words = self.get_top_words(negative_text, top_n=10)
 
         recent_reviews = self.parse_reviews(

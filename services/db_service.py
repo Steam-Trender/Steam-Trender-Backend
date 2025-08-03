@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import config
 from config import DATA_FOLDER
 from models.game import Game
-from models.tag import Tag, GameTagAssociation
+from models.tag import GameTagAssociation, Tag
 from models.update import Update
 from utils.canonize import canonize
 
@@ -86,9 +86,7 @@ class DatabaseService:
                     tag = Tag(title=tag_title)
                     db.add(tag)
                     tag_map[tag_title] = tag
-                tag_objects.append(
-                    GameTagAssociation(tag=tag, tag_number=idx)
-                )
+                tag_objects.append(GameTagAssociation(tag=tag, tag_number=idx))
 
             reviews_score = int(entry["reviews_fancy"].replace("%", ""))
             reviews = entry["reviews"]

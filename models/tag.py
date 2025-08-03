@@ -10,13 +10,8 @@ class Tag(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
-    game_associations = relationship(
-        "GameTagAssociation", back_populates="tag"
-    )
+    game_associations = relationship("GameTagAssociation", back_populates="tag")
     games = association_proxy("game_associations", "game")
-
-
-
 
 
 class GameTagAssociation(Base):

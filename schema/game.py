@@ -1,7 +1,7 @@
 from datetime import date
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from schema.tag import Tag
 
@@ -15,10 +15,9 @@ class Game(BaseModel):
     reviews_score: float
     release_date: date
     price: float
-    tags: List[Tag]
+    tags: List[Tag] = Field(alias="tags_sorted")
     owners: int
     revenue: float
 
     class Config:
         from_attributes = True
-        fields = {"tags": "tags_sorted"}

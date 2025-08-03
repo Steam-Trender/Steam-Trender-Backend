@@ -45,7 +45,7 @@ async def get_competitors_analysis(
             max_date=max_date,
             whitelist_tag_ids=whitelist_tag_ids,
             blacklist_tag_ids=blacklist_tag_ids,
-            tags_threshold=tags_threshold
+            tags_threshold=tags_threshold,
         )
         overview = await game_service.analyze_games(
             games=games,
@@ -124,7 +124,7 @@ async def get_tags_analysis(
                 max_date=max_date,
                 whitelist_tag_ids=whitelist_tag_ids,
                 blacklist_tag_ids=None,
-                tags_threshold=tags_threshold
+                tags_threshold=tags_threshold,
             )
             overview = await game_service.analyze_games(
                 games=games,
