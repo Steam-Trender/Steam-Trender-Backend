@@ -20,6 +20,7 @@ router_group = "/analyze"
 @router.get(f"{router_group}/competitors", response_model=CompetitorOverview)
 async def get_competitors_analysis(
     reviews_coeff: int = 30,
+    tags_threshold: int = 10,
     min_price: float = 0,
     max_price: float = None,
     min_reviews: int = 0,
@@ -44,6 +45,7 @@ async def get_competitors_analysis(
             max_date=max_date,
             whitelist_tag_ids=whitelist_tag_ids,
             blacklist_tag_ids=blacklist_tag_ids,
+            tags_threshold=tags_threshold
         )
         overview = await game_service.analyze_games(
             games=games,
@@ -61,6 +63,7 @@ async def get_competitors_analysis(
 @router.get(f"{router_group}/trends", response_model=List[YearOverview])
 async def get_trends_analysis(
     min_reviews: int = 0,
+    tags_threshold: int = 10,
     min_year: int = 2020,
     max_year: int = 2024,
     tag_ids: List[int] = Query(None),
@@ -79,6 +82,7 @@ async def get_trends_analysis(
                 max_date=max_date,
                 whitelist_tag_ids=tag_ids,
                 blacklist_tag_ids=None,
+                tags_threshold=20,
             )
             coeff = get_year_coeff(year)
             overview = await game_service.analyze_games(
@@ -99,6 +103,7 @@ async def get_trends_analysis(
 @router.get(f"{router_group}/tags", response_model=List[TagOverview])
 async def get_tags_analysis(
     reviews_coeff: int = 30,
+    tags_threshold: int = 10,
     min_reviews: int = 30,
     min_year: int = 2020,
     max_year: int = 2024,
@@ -119,6 +124,7 @@ async def get_tags_analysis(
                 max_date=max_date,
                 whitelist_tag_ids=whitelist_tag_ids,
                 blacklist_tag_ids=None,
+                tags_threshold=tags_threshold
             )
             overview = await game_service.analyze_games(
                 games=games,

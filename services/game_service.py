@@ -41,7 +41,7 @@ class GameService:
         max_date: date = date(2024, 12, 31),
         whitelist_tag_ids: list = None,
         blacklist_tag_ids: list = None,
-        tag_threshold: int = 5,
+        tags_threshold: int = 10,
     ) -> List[Game]:
         min_reviews, max_reviews = validate_range(min_reviews, max_reviews)
         min_price, max_price = validate_range(min_price, max_price)
@@ -62,7 +62,7 @@ class GameService:
                 query = query.filter(
                     Game.tag_associations.any(
                         (GameTagAssociation.tag_id == tag_id) &
-                        (GameTagAssociation.tag_number <= tag_threshold)
+                        (GameTagAssociation.tag_number <= tags_threshold)
                     )
                 )
 
@@ -71,7 +71,7 @@ class GameService:
                 query = query.filter(
                     ~Game.tag_associations.any(
                         (GameTagAssociation.tag_id == tag_id) &
-                        (GameTagAssociation.tag_number <= tag_threshold)
+                        (GameTagAssociation.tag_number <= tags_threshold)
                     )
                 )
 
@@ -82,8 +82,6 @@ class GameService:
         query = query.order_by(desc(Game.reviews))
         result = await session.execute(query)
         games = result.scalars().all()
-
-        print(len(games))
 
         return games
 
